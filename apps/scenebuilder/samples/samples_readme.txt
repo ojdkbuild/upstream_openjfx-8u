@@ -60,7 +60,7 @@ environment:
 **To find the supported versions of operating system, Java platform, JavaFX Platform
 and NetBeans IDE for a particular JavaFX Scene Builder release, see the release 
 documentation page at
-http://docs.oracle.com/javafx/release-documentation.html 
+https://docs.oracle.com/javafx/release-documentation.html 
 
 To get the latest release of JavaFX Scene Builder, go to 
 http://www.oracle.com/technetwork/java/javafx/downloads/index.html
@@ -177,6 +177,15 @@ HelloSwingNode
 A sample that demonstrates a Swing asset in action, a JButton, within the JavaFX application.
 Two buttons are live in this application, a JavaFX Button and a Swing JButton.
 The user can click on either the JavaFX one or the Swing one to respectively disable or enable the other button.
+
+
+----------
+AirportApp
+
+A sample application with an aeronautical theme. The user can select an airport from the ListView
+which is then located on a map (utilising a ScrollPane to animate to the correct location).
+There is a detailed video showing how this app is constructed, including applying CSS and connecting code.
+You can find the video on the Java YouTube channel at: http://youtu.be/ij0HwRAlCmo
 
 
 -------------------------------------------------------------------- 

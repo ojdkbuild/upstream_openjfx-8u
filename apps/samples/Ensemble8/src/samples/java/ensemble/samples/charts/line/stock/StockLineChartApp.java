@@ -54,7 +54,7 @@ import javafx.util.Duration;
  * @preview preview.png
  * @see javafx.scene.chart.LineChart
  * @see javafx.scene.chart.NumberAxis
- * @docUrl http://docs.oracle.com/javafx/2/charts/jfxpub-charts.htm Using JavaFX Charts Tutorial
+ * @docUrl https://docs.oracle.com/javafx/2/charts/jfxpub-charts.htm Using JavaFX Charts Tutorial
  */
 public class StockLineChartApp extends Application {
 
@@ -74,6 +74,7 @@ public class StockLineChartApp extends Application {
         animation = new Timeline();
         animation.getKeyFrames()
                 .add(new KeyFrame(Duration.millis(1000 / 60), (ActionEvent actionEvent) -> {
+                     // 6 minutes data per frame
                     for (int count = 0; count < 6; count++) {
                         nextTime();
                         plotTime();
