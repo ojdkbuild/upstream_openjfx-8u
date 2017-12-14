@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,32 +103,18 @@ static OSStatus AVFTapRenderCallback(void *inRefCon,
                                      UInt32 inNumberFrames,
                                      AudioBufferList *ioData);
 
-class AVFTapContext {
-public:
-    AVFTapContext(AVFSoundLevelUnitPtr slu, AVFAudioSpectrumUnitPtr spectrum, AVFAudioEqualizerPtr eq) :
-        audioSLU(slu),
-        audioSpectrum(spectrum),
-        audioEQ(eq)
-    {
-    }
+typedef struct AVFTapContext {
+    BOOL enabled;
+    AVFAudioProcessor *processor; // we want this object retained, so don't use __bridge to set this!
 
-    ~AVFTapContext() {
-        // AudioUnits have already been deallocated by now
-        // shared_ptrs get freed automatically
-    }
-
+    AudioUnit delayUnit;
     AudioUnit spectrumUnit;
     AudioUnit volumeUnit;
     AudioUnit eqUnit;
 
     AudioUnit renderUnit; // the last unit in our chain
     CMItemCount totalFrames;
-
-    // Hold on to these while we're running
-    AVFSoundLevelUnitPtr audioSLU;
-    AVFAudioSpectrumUnitPtr audioSpectrum;
-    AVFAudioEqualizerPtr audioEQ;
-};
+} AVFTapContext;
 
 static bool FindAudioTap() {
     static bool checkPerformed = false;
@@ -158,47 +144,44 @@ static bool FindAudioTap() {
 
 @implementation AVFAudioProcessor
 
-- (id) init {
+- (id) initWithPlayer:(AVFMediaPlayer*)player assetTrack:(AVAssetTrack *)assetTrack {
     if ((self = [super init]) != nil) {
-        _soundLevelUnit = AVFSoundLevelUnitPtr(new AVFSoundLevelUnit());
-        _audioSpectrum = AVFAudioSpectrumUnitPtr(new AVFAudioSpectrumUnit());
-        _audioEqualizer = AVFAudioEqualizerPtr(new AVFAudioEqualizer());
+        _player = player;
 
-        _volume = 1.0f;
-        _balance = 0.0f;
-        _audioDelay = 0LL;
+        // Create a mixer for this asset track
+        [self createMixerWithTrack:assetTrack];
+        if (_mixer) {
+            _player.playerItem.audioMix = _mixer;
+        }
+
+        _soundLevelUnit = new AVFSoundLevelUnit();
+        _audioSpectrum = NULL;
+        _audioEqualizer = NULL;
     }
     return self;
 }
 
 - (void) dealloc {
-    _soundLevelUnit = nullptr;
-    _audioSpectrum = nullptr;
-    _audioEqualizer = nullptr;
+    if (_soundLevelUnit) {
+        delete _soundLevelUnit;
+        _soundLevelUnit = NULL;
+    }
+
+    // We don't own these objects
+    _audioSpectrum = NULL;
+    _audioEqualizer = NULL;
 }
 
-- (void) setAudioTrack:(AVAssetTrack *)track {
-    if (track != _audioTrack) {
-        // reset the audio mixer if it's already been created
-        // this theoretically should never happen...
-        _mixer = nil;
-    }
-    _audioTrack = track;
-}
-
-- (AVAudioMix*) mixer {
-    if (!self.audioTrack) {
-        return nil;
-    }
+- (void) createMixerWithTrack:(AVAssetTrack*)audioTrack {
     if (!FindAudioTap()) {
         NSLog(@"Audio tap is not available, cannot post-process audio");
-        return nil;
+        return;
     }
     if (!_mixer) {
         AVMutableAudioMix *mixer = [AVMutableAudioMix audioMix];
         if (mixer) {
             AVMutableAudioMixInputParameters *audioMixInputParameters =
-                [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:self.audioTrack];
+                [AVMutableAudioMixInputParameters audioMixInputParametersWithTrack:audioTrack];
             if (audioMixInputParameters &&
                 [audioMixInputParameters respondsToSelector:@selector(setAudioTapProcessor:)]) {
                 __MTAudioTapCallbacks callbacks;
@@ -221,6 +204,7 @@ static bool FindAudioTap() {
                                  audioProcessingTap);
 
                     CFRelease(audioProcessingTap); // owned by the mixer now
+
                     mixer.inputParameters = @[audioMixInputParameters];
 
                     _mixer = mixer;
@@ -228,19 +212,18 @@ static bool FindAudioTap() {
             }
         }
     }
-    return _mixer;
 }
 
 - (void) setVolume:(float)volume {
     _volume = volume;
-    if (_soundLevelUnit != nullptr) {
+    if (_soundLevelUnit) {
         _soundLevelUnit->setVolume(volume);
     }
 }
 
 - (void) setBalance:(float)balance {
     _balance = balance;
-    if (_soundLevelUnit != nullptr) {
+    if (_soundLevelUnit) {
         _soundLevelUnit->setBalance(balance);
     }
 }
@@ -249,13 +232,16 @@ static bool FindAudioTap() {
 
 void InitAudioTap(CFTypeRef tapRef, void *clientInfo, void **tapStorageOut)
 {
-    // retain the AU kernels so they don't get freed while we're running
-    AVFAudioProcessor *processor = (__bridge AVFAudioProcessor *)clientInfo;
-    if (processor) {
-        AVFTapContext *context = new AVFTapContext(processor.soundLevelUnit,
-                                                   processor.audioSpectrum,
-                                                   processor.audioEqualizer);
+    AVFAudioProcessor *processor = (__bridge AVFAudioProcessor*)clientInfo;
+
+    AVFTapContext *context = (AVFTapContext*)calloc(1, sizeof(AVFTapContext));
+    if (context) {
+        context->enabled = NO;
+            // processor should be retained, else we can crash when closing the media player
+        context->processor = processor;
         *tapStorageOut = context;
+
+        processor.tapStorage = context;
     }
 }
 
@@ -270,7 +256,10 @@ void FinalizeAudioTap(CFTypeRef tapRef)
     AVFTapContext *context = (AVFTapContext*)gAudioTapGetStorage(tapRef);
 
     if (context) {
-        delete context;
+        context->processor.tapStorage = NULL;
+        context->processor = NULL;
+
+        free(context);
     }
 }
 
@@ -357,15 +346,28 @@ void PrepareAudioTap(CFTypeRef tapRef,
     }
 
     // Get an instance of our sound level unit
+    context->delayUnit = FindAudioUnit(kAudioUnitType_Effect,
+                                       kAudioUnitSubType_SampleDelay,
+                                       kAudioUnitManufacturer_Apple);
+    if (context->delayUnit) {
+        OSStatus status = SetupAudioUnit(context->delayUnit, processingFormat, (UInt32)maxFrames);
+        if (noErr != status) {
+            NSLog(@"Error setting up delay unit: %d", status);
+            AudioComponentInstanceDispose(context->delayUnit);
+            context->delayUnit = NULL;
+        }
+    }
+
     context->eqUnit = NULL;
-    if (context->audioEQ != nullptr) {
-        context->eqUnit = NewKernelProcessorUnit(static_pointer_cast<AVFKernelProcessor>(context->audioEQ));
+    if (context->processor.audioEqualizer) {
+        context->eqUnit = NewKernelProcessorUnit(context->processor.audioEqualizer);
         if (context->eqUnit) {
             OSStatus status = SetupAudioUnit(context->eqUnit,
                                              processingFormat,
                                              (UInt32)maxFrames);
             if (noErr != status) {
                 NSLog(@"Error creating audio equalizer unit: %d", status);
+                // Don't delete the instance, that will happen when we dispose the unit
                 AudioComponentInstanceDispose(context->eqUnit);
                 context->eqUnit = NULL;
             }
@@ -373,14 +375,15 @@ void PrepareAudioTap(CFTypeRef tapRef,
     }
 
     context->spectrumUnit = NULL;
-    if (context->audioSpectrum != nullptr) {
-        context->spectrumUnit = NewKernelProcessorUnit(static_pointer_cast<AVFKernelProcessor>(context->audioSpectrum));
+    if (context->processor.audioSpectrum) {
+        context->spectrumUnit = NewKernelProcessorUnit(context->processor.audioSpectrum);
         if (context->spectrumUnit) {
             OSStatus status = SetupAudioUnit(context->spectrumUnit,
                                              processingFormat,
                                              (UInt32)maxFrames);
             if (noErr != status) {
                 NSLog(@"Error creating audio spectrum unit: %d", status);
+                // Don't delete the instance, that will happen when we dispose the unit
                 AudioComponentInstanceDispose(context->spectrumUnit);
                 context->spectrumUnit = NULL;
             }
@@ -388,8 +391,8 @@ void PrepareAudioTap(CFTypeRef tapRef,
     }
 
     context->volumeUnit = NULL;
-    if (context->audioSLU != nullptr) {
-        context->volumeUnit = NewKernelProcessorUnit(static_pointer_cast<AVFKernelProcessor>(context->audioSLU));
+    if (context->processor.soundLevelUnit) {
+        context->volumeUnit = NewKernelProcessorUnit(context->processor.soundLevelUnit);
         if (context->volumeUnit) {
             OSStatus status = SetupAudioUnit(context->volumeUnit,
                                              processingFormat,
@@ -409,7 +412,7 @@ void PrepareAudioTap(CFTypeRef tapRef,
      * via the render proc we install.
      *
      * The graph will look like this:
-     *    (render proc) -> eqUnit -> spectrumUnit -> volUnit
+     *    (render proc) -> delayUnit -> eqUnit -> spectrumUnit -> volUnit
      *
      * This will allow the EQ settings to affect the spectrum output, but not
      * the volume or balance.
@@ -418,6 +421,16 @@ void PrepareAudioTap(CFTypeRef tapRef,
     context->renderUnit = NULL;
 
     // Set initial settings
+    if (context->delayUnit) {
+        if (context->renderUnit) {
+            // Connect renderUnit output to this input
+            ConnectAudioUnits(context->renderUnit, context->delayUnit);
+        }
+        context->renderUnit = context->delayUnit;
+        if (!firstUnit) {
+            firstUnit = context->delayUnit;
+        }
+    }
     if (context->eqUnit) {
         if (context->renderUnit) {
             ConnectAudioUnits(context->renderUnit, context->eqUnit);
@@ -457,6 +470,7 @@ void PrepareAudioTap(CFTypeRef tapRef,
                              &renderCB, sizeof(renderCB));
     }
     context->totalFrames = 0;
+    context->enabled = YES;
 }
 
 void UnprepareAudioTap(CFTypeRef tapRef)
@@ -466,8 +480,14 @@ void UnprepareAudioTap(CFTypeRef tapRef)
         return;
     }
     AVFTapContext *context = (AVFTapContext*)gAudioTapGetStorage(tapRef);
+    context->enabled = NO;
     context->renderUnit = NULL;
 
+    if (context->delayUnit) {
+        AudioUnitUninitialize(context->delayUnit);
+        AudioComponentInstanceDispose(context->delayUnit);
+        context->delayUnit = NULL;
+    }
     if (context->spectrumUnit) {
         AudioUnitUninitialize(context->spectrumUnit);
         AudioComponentInstanceDispose(context->spectrumUnit);

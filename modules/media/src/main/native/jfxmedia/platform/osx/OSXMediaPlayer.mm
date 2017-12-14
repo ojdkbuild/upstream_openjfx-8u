@@ -128,10 +128,6 @@ static Class gMediaPlayerClass = nil;
         movieURL = [source retain];
 
         env->GetJavaVM(&javaPlayerVM);
-        if (env->ExceptionCheck()) {
-            env->ExceptionClear();
-            return nil;
-        }
 #if USE_WEAK_REFS
         javaPlayer = env->NewWeakGlobalRef(jp);
 #else

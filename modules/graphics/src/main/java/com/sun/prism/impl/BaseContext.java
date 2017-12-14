@@ -108,7 +108,7 @@ public abstract class BaseContext {
             // since it was bound and unflushed...
             maskTex.update(maskBuffer, maskTex.getPixelFormat(),
                                        0, 0, 0, 0, highMaskCol, nextMaskRow,
-                                       maskTex.getContentWidth(), true);
+                                       maskTex.getPhysicalWidth(), true);
             maskTex.unlock();
             curMaskRow = curMaskCol = nextMaskRow = highMaskCol = 0;
         }

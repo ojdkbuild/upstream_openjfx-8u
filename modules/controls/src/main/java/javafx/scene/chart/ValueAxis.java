@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -356,20 +356,23 @@ public abstract class ValueAxis<T extends Number> extends Axis<T> {
         }
         // we have done all auto calcs, let Axis position major tickmarks
         super.layoutChildren();
-        int numMinorTicks = (getTickMarks().size() - 1)*(Math.max(1, getMinorTickCount()) - 1);
-        double neededLength = (getTickMarks().size()+numMinorTicks)*2;
 
         // Update minor tickmarks
         minorTickPath.getElements().clear();
-        // Don't draw minor tick marks if there isn't enough space for them!
 
         double minorTickLength = Math.max(0, getMinorTickLength());
-        if (minorTickLength > 0 && length > neededLength) {
+        // The length must be greater then the space required for tick marks, otherwise, there's no reason to create
+        // minor tick marks
+        if (minorTickLength > 0 && length > 2 * getTickMarks().size()) {
+            // Strip factor is >= 1. When == 1, all minor ticks will fit.
+            // It's computed as number of minor tick marks divided by available length
+            int stripFactor = (int)Math.ceil(2 * minorTickMarkValues.size() / (length - 2 * getTickMarks().size()));
             if (Side.LEFT.equals(side)) {
                 // snap minorTickPath to pixels
                 minorTickPath.setLayoutX(-0.5);
                 minorTickPath.setLayoutY(0.5);
-                for (T value : minorTickMarkValues) {
+                for (int i = 0; i < minorTickMarkValues.size(); i += stripFactor) {
+                    T value = minorTickMarkValues.get(i);
                     double y = getDisplayPosition(value);
                     if (y >= 0 && y <= length) {
                         minorTickPath.getElements().addAll(
@@ -381,7 +384,8 @@ public abstract class ValueAxis<T extends Number> extends Axis<T> {
                 // snap minorTickPath to pixels
                 minorTickPath.setLayoutX(0.5);
                 minorTickPath.setLayoutY(0.5);
-                for (T value : minorTickMarkValues) {
+                for (int i = 0; i < minorTickMarkValues.size(); i += stripFactor) {
+                    T value = minorTickMarkValues.get(i);
                     double y = getDisplayPosition(value);
                     if (y >= 0 && y <= length) {
                         minorTickPath.getElements().addAll(
@@ -393,7 +397,8 @@ public abstract class ValueAxis<T extends Number> extends Axis<T> {
                 // snap minorTickPath to pixels
                 minorTickPath.setLayoutX(0.5);
                 minorTickPath.setLayoutY(-0.5);
-                for (T value : minorTickMarkValues) {
+                for (int i = 0; i < minorTickMarkValues.size(); i += stripFactor) {
+                    T value = minorTickMarkValues.get(i);
                     double x = getDisplayPosition(value);
                     if (x >= 0 && x <= length) {
                         minorTickPath.getElements().addAll(
@@ -405,7 +410,8 @@ public abstract class ValueAxis<T extends Number> extends Axis<T> {
                 // snap minorTickPath to pixels
                 minorTickPath.setLayoutX(0.5);
                 minorTickPath.setLayoutY(0.5);
-                for (T value : minorTickMarkValues) {
+                for (int i = 0; i < minorTickMarkValues.size(); i += stripFactor) {
+                    T value = minorTickMarkValues.get(i);
                     double x = getDisplayPosition(value);
                     if (x >= 0 && x <= length) {
                         minorTickPath.getElements().addAll(

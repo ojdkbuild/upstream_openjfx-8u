@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,15 @@ public:
     AVFKernelComponent(AudioComponentInstance audioUnit, bool inProcessesInPlace = true)
         : AUEffectBase(audioUnit, inProcessesInPlace),
         mUsesKernel(false),
-        mProcessor(nullptr)
+        mProcessor(NULL)
     {}
 
     virtual ~AVFKernelComponent() {
-        mProcessor = nullptr;
+        // Don't do anything with mProcessor as it could have been deleted already
     }
 
     virtual AUKernelBase *NewKernel() {
-        if (mProcessor != nullptr) {
+        if (mProcessor) {
             AUKernelBase *kernel = mProcessor->NewKernel();
             mUsesKernel = (kernel != NULL);
             return kernel;
@@ -60,7 +60,7 @@ public:
                                                                  inElement,
                                                                  inPrevFormat,
                                                                  inNewFormat);
-        if (mProcessor != nullptr && inScope == kAudioUnitScope_Input && inElement == 0) {
+        if (inScope == kAudioUnitScope_Input && inElement == 0) {
             mProcessor->StreamFormatChanged(inNewFormat);
         }
         return status;
@@ -78,7 +78,7 @@ public:
                                                           inFramesToProcess);
         }
         // Otherwise call ProcessBufferLists
-        if (mProcessor != nullptr) {
+        if (mProcessor) {
             return mProcessor->ProcessBufferLists(ioActionFlags,
                                                   inBuffer,
                                                   outBuffer,
@@ -96,16 +96,15 @@ public:
             inScope == kAudioUnitScope_Global &&
             inElement == 0) {
             if (inDataSize == sizeof(AVFKernelProcessor*)) {
-                AVFKernelProcessorPtr processor = *((AVFKernelProcessorPtr*)inData);
-                // this compares the raw pointers, not the shared_ptr itself
+                AVFKernelProcessor *processor = *((AVFKernelProcessor **)inData);
                 if (mProcessor != processor) {
-                    if (mProcessor != nullptr) {
+                    if (mProcessor) {
                         mProcessor->SetAudioUnit(NULL);
-                        mProcessor = nullptr;
+                        mProcessor = NULL;
                     }
 
                     mProcessor = processor;
-                    if (mProcessor != nullptr) {
+                    if (mProcessor) {
                         mProcessor->SetAudioUnit(this);
                         const AudioStreamBasicDescription& format =
                                 GetStreamFormat(kAudioUnitScope_Input, 0);
@@ -120,7 +119,7 @@ public:
     }
 private:
     bool mUsesKernel;
-    AVFKernelProcessorPtr mProcessor;
+    AVFKernelProcessor *mProcessor;
 };
 
 // Synchronize registration of the component
@@ -145,7 +144,7 @@ static inline AudioComponent GetAVFComponent() {
 }
 
 
-AudioUnit NewKernelProcessorUnit(AVFKernelProcessorPtr kernel) {
+AudioUnit NewKernelProcessorUnit(AVFKernelProcessor *kernel) {
     OSStatus status = noErr;
     AudioUnit unit = NULL;
     AudioComponent ac = GetAVFComponent();
@@ -161,7 +160,7 @@ AudioUnit NewKernelProcessorUnit(AVFKernelProcessorPtr kernel) {
                                       kAudioUnitScope_Global,
                                       0,
                                       &kernel,
-                                      sizeof(AVFKernelProcessorPtr*));
+                                      sizeof(AVFKernelProcessor**));
     }
 
     if (noErr != status) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,6 @@ extern "C" {
     static jstring LocatorToString(JNIEnv *env, jobject locator)
     {
         static jmethodID mid_toString = 0;
-        jstring result = NULL;
-        CJavaEnvironment javaEnv(env);
 
         if (mid_toString == 0)
         {
@@ -60,15 +58,10 @@ extern "C" {
 
             mid_toString = env->GetMethodID(klass, "getStringLocation", "()Ljava/lang/String;");
             env->DeleteLocalRef(klass);
-            if (javaEnv.clearException())
-                return NULL;
         }
 
-        result = (jstring)env->CallObjectMethod(locator, mid_toString);
-        if (javaEnv.clearException())
-            return NULL;
 
-        return result;
+        return (jstring)env->CallObjectMethod(locator, mid_toString);
     }
 
     static jint InitMedia(JNIEnv *env, CPipelineOptions* pOptions, jobject jLocator, jstring jContentType, jlong jSizeHint,
@@ -77,7 +70,7 @@ extern "C" {
         CMedia*         pMedia = NULL;
         char*           pjContent = (char*)env->GetStringUTFChars(jContentType , NULL);
         jstring         jLocation = LocatorToString(env, jLocator);
-        char*           pjLocation = NULL;
+        char*           pjLocation = (char*)env->GetStringUTFChars(jLocation , NULL);
         CMediaManager*  pManager = NULL;
         uint32_t        uErrCode = CMediaManager::GetInstance(&pManager);
 
@@ -89,11 +82,6 @@ extern "C" {
         {
             return ERROR_MEMORY_ALLOCATION;
         }
-        if (NULL == jLocation)
-        {
-            return ERROR_MEMORY_ALLOCATION;
-        }
-        pjLocation = (char*)env->GetStringUTFChars(jLocation , NULL);
         if (NULL == pjLocation)
         {
             env->ReleaseStringUTFChars(jContentType, pjContent);

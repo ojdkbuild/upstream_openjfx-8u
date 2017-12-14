@@ -32,11 +32,10 @@
 class CJavaBandsHolder : public CBandsHolder
 {
 public:
-    CJavaBandsHolder();
+    CJavaBandsHolder(JNIEnv* env, int bands, jfloatArray magnitudes, jfloatArray phases);
     ~CJavaBandsHolder();
 
 public:
-    bool Init(JNIEnv* env, int bands, jfloatArray magnitudes, jfloatArray phases);
     void UpdateBands(int size, const float* magnitudes, const float* phases);
 
 private:

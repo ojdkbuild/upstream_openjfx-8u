@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ AVFAudioSpectrumUnit::AVFAudioSpectrumUnit() :
     mSpectrumCallbackContext(NULL),
 
     mEnabled(true),
-
     mBandCount(128),
     mBands(NULL),
     mUpdateInterval(kDefaultAudioSpectrumUpdateInterval),
@@ -65,8 +64,6 @@ AVFAudioSpectrumUnit::AVFAudioSpectrumUnit() :
 {
     mMixBuffer.mNumberBuffers = 1;
     mMixBuffer.mBuffers[0].mData = NULL;
-
-    pthread_mutex_init(&mBandLock, NULL);
 }
 
 AVFAudioSpectrumUnit::~AVFAudioSpectrumUnit() {
@@ -88,9 +85,6 @@ OSStatus AVFAudioSpectrumUnit::ProcessBufferLists(AudioUnitRenderActionFlags& io
                                                   AudioBufferList& outBuffer,
                                                   UInt32 inFramesToProcess)
 {
-    if (!mEnabled) {
-        return noErr;
-    }
     // (Re)allocate mix buffer if needed
     if (!mMixBuffer.mBuffers[0].mData || mMixBufferFrameCapacity < inFramesToProcess) {
         // allocate buffer list (only need to do this once)
@@ -145,20 +139,9 @@ void AVFAudioSpectrumUnit::SetEnabled(bool isEnabled) {
 }
 
 void AVFAudioSpectrumUnit::SetBands(int bands, CBandsHolder* holder) {
-    lockBands();
-    if (mBands) {
-        CBandsHolder::ReleaseRef(mBands);
-        mBands = NULL;
-    }
-    mBandCount = 0;
-    if (holder) {
-        mBands = CBandsHolder::AddRef(holder);
-        if (mBands) {
-            mBandCount = bands;
-        }
-    }
+    mBandCount = bands;
+    mBands = holder;
     mRebuildCrunch = true;
-    unlockBands();
 }
 
 size_t AVFAudioSpectrumUnit::GetBands() {
@@ -195,7 +178,7 @@ void AVFAudioSpectrumUnit::Reset() {
 
 static void AVFAudioSpectrum_SpectralFunction(SpectralBufferList* inSpectra, void* inUserData) {
     AVFAudioSpectrumUnit *unit = static_cast<AVFAudioSpectrumUnit*>(inUserData);
-    if (unit && unit->IsEnabled()) {
+    if (unit) {
         unit->SpectralFunction(inSpectra);
     }
 }
@@ -203,14 +186,6 @@ static void AVFAudioSpectrum_SpectralFunction(SpectralBufferList* inSpectra, voi
 void AVFAudioSpectrumUnit::SpectralFunction(SpectralBufferList* inSpectra) {
     // https://developer.apple.com/library/mac/documentation/Performance/Conceptual/vDSP_Programming_Guide/UsingFourierTransforms/UsingFourierTransforms.html
     // Scale the results properly, scale factor is 2x for 1D real forward transforms
-
-    // lock now otherwise the bands could change while we're processing
-    lockBands();
-    if (!mBands || mBandCount <= 0 || !mEnabled) {
-        unlockBands();
-        return;
-    }
-
     float scale = 2.0;
     DSPSplitComplex *cplx = inSpectra->mDSPSplitComplex;
     vDSP_vsmul(cplx->realp, 1, &scale, cplx->realp, 1, mBandCount);
@@ -246,7 +221,9 @@ void AVFAudioSpectrumUnit::SpectralFunction(SpectralBufferList* inSpectra) {
         vDSP_vsdiv(mPhases, 1, &divisor, mPhases, 1, mBandCount);
 
         // Update band data
-        mBands->UpdateBands(mBandCount, mMagnitudes, mPhases);
+        if (mBands) {
+            mBands->UpdateBands(mBandCount, mMagnitudes, mPhases);
+        }
 
         // Call our listener to dispatch the spectrum event
         if (mSpectrumCallbackProc) {
@@ -259,12 +236,9 @@ void AVFAudioSpectrumUnit::SpectralFunction(SpectralBufferList* inSpectra) {
         vDSP_vclr(mPhases, 1, mBandCount);
         mFFTCount = 0;
     }
-    unlockBands();
 }
 
 void AVFAudioSpectrumUnit::SetupSpectralProcessor() {
-    lockBands();
-
     if (mSpectralCrunch) {
         delete mSpectralCrunch;
         mSpectralCrunch = NULL;
@@ -274,7 +248,7 @@ void AVFAudioSpectrumUnit::SetupSpectralProcessor() {
         mPhases.free();
     }
 
-    if (mEnabled && mBandCount > 0 && (mBands != NULL)) {
+    if (mEnabled && mBandCount > 0) {
         // inFFTSize = 2x number of bins (this is adjusted properly later)
         // inHopSize = the number of samples to increment per update, depends on
         //             how much oversampling we want
@@ -314,5 +288,4 @@ void AVFAudioSpectrumUnit::SetupSpectralProcessor() {
     } // else leave disabled
 
     mRebuildCrunch = false;
-    unlockBands();
 }

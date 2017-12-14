@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,11 @@
 #define __JFXMedia__AVFAudioSpectrumUnit__
 
 #include <AudioUnit/AudioUnit.h>
-
-#include <pthread.h>
-#include <memory>
-
 #include "PipelineManagement/AudioSpectrum.h"
 #include "AVFKernelProcessor.h"
 #include "CASpectralProcessor.h"
 #include "CAStreamBasicDescription.h"
 #include "CAAutoDisposer.h"
-
 
 // Defaults, these match the current defaults in JavaFX which get set anyways
 // but we can optimize things a bit here...
@@ -98,8 +93,6 @@ private:
     AVFSpectrumUnitCallbackProc mSpectrumCallbackProc;
     void *mSpectrumCallbackContext;
     bool mEnabled;
-
-    pthread_mutex_t mBandLock;      // prevent bands from disappearing while we're processing
     int mBandCount;
     CBandsHolder *mBands;
     double mUpdateInterval;
@@ -118,21 +111,10 @@ private:
     CAAutoFree<Float32> mMagnitudes; // magnitude accumulator
     CAAutoFree<Float32> mPhases;     // phase accumulator
 
-
-    bool mRebuildCrunch;
+    bool mRebuildCrunch; // atomic lock avoidance...
     CASpectralProcessor *mSpectralCrunch;
-
-    void lockBands() {
-        pthread_mutex_lock(&mBandLock);
-    }
-
-    void unlockBands() {
-        pthread_mutex_unlock(&mBandLock);
-    }
 
     void SetupSpectralProcessor();
 };
-
-typedef std::shared_ptr<AVFAudioSpectrumUnit> AVFAudioSpectrumUnitPtr;
 
 #endif /* defined(__JFXMedia__AVFAudioSpectrumUnit__) */

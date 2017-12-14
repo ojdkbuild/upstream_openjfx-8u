@@ -46,7 +46,7 @@ Java_com_sun_media_jfxmediaimpl_NativeAudioSpectrum_nativeSetEnabled(JNIEnv *env
 {
     CAudioSpectrum *pSpectrum = (CAudioSpectrum*)jlong_to_ptr(nativeRef);
     if (pSpectrum != NULL)
-        pSpectrum->SetEnabled(enabled == JNI_TRUE);
+        pSpectrum->SetEnabled(enabled);
 }
 
 JNIEXPORT void JNICALL
@@ -54,11 +54,7 @@ Java_com_sun_media_jfxmediaimpl_NativeAudioSpectrum_nativeSetBands(JNIEnv *env, 
                                                                                 jint bands, jfloatArray magnitudes, jfloatArray phases)
 {
     CAudioSpectrum *pSpectrum = (CAudioSpectrum*)jlong_to_ptr(nativeRef);
-    CJavaBandsHolder *pHolder = new (std::nothrow) CJavaBandsHolder();
-    if (!pHolder->Init(env, bands, magnitudes, phases)) {
-        delete pHolder;
-        pHolder = NULL;
-    }
+    CBandsHolder *pHolder = new (std::nothrow) CJavaBandsHolder(env, bands, magnitudes, phases);
 
     if (pSpectrum != NULL && pHolder != NULL)
         pSpectrum->SetBands(bands, pHolder);
