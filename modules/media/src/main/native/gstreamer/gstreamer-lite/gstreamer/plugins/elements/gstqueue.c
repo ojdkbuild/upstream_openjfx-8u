@@ -1609,6 +1609,7 @@ gst_queue_get_property (GObject * object,
 static GstStateChangeReturn gst_queue_change_state (GstElement *element, GstStateChange transition)
 {
     GstQueue *queue = GST_QUEUE(element);
+    GstStateChangeReturn ret;
 
     switch (transition)
     {
@@ -1622,7 +1623,7 @@ static GstStateChangeReturn gst_queue_change_state (GstElement *element, GstStat
         break;
     }
 
-    GstStateChangeReturn ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
+    ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
 
     if (ret == GST_STATE_CHANGE_FAILURE)
         return ret;

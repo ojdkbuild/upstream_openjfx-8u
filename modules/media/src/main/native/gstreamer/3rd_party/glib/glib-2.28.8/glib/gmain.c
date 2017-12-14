@@ -3953,12 +3953,13 @@ g_timeout_dispatch (GSource     *source,
 GSource *
 g_timeout_source_new (guint interval)
 {
+  GTimeoutSource *timeout_source;
   GSource *source = g_source_new (&g_timeout_funcs, sizeof (GTimeoutSource));
 #ifdef GSTREAMER_LITE
   if (source == NULL)
       return NULL;
 #endif // GSTREAMER_LITE
-  GTimeoutSource *timeout_source = (GTimeoutSource *)source;
+  timeout_source = (GTimeoutSource *)source;
 
   timeout_source->interval = interval;
   g_timeout_set_expiration (timeout_source, g_get_monotonic_time ());
