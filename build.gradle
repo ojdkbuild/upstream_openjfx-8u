@@ -338,11 +338,11 @@ ext.IS_TEST_PACKAGER_DMG = Boolean.parseBoolean(TEST_PACKAGER_DMG)
 
 // Define the SWT.jar that we are going to have to download during the build process based
 // on what platform we are compiling from (not based on our target).
-ext.SWT_FILE_NAME = IS_MAC ? "org.eclipse.swt.cocoa.macosx.x86_64_3.7.2.v3740f" :
-    IS_WINDOWS && IS_64 ? "org.eclipse.swt.win32.win32.x86_64_3.7.2.v3740f" :
-    IS_WINDOWS && !IS_64 ? "org.eclipse.swt.win32.win32.x86_3.7.2.v3740f" :
-    IS_LINUX && IS_64 ? "org.eclipse.swt.gtk.linux.x86_64_3.7.2.v3740f" :
-    IS_LINUX && !IS_64 ? "org.eclipse.swt.gtk.linux.x86_3.7.2.v3740f" : ""
+ext.SWT_FILE_NAME = IS_MAC ? "org.eclipse.swt.cocoa.macosx.x86_64" :
+    IS_WINDOWS && IS_64 ? "org.eclipse.swt.win32.win32.x86_64" :
+    IS_WINDOWS && !IS_64 ? "org.eclipse.swt.win32.win32.x86" :
+    IS_LINUX && IS_64 ? "org.eclipse.swt.gtk.linux.x86_64" :
+    IS_LINUX && !IS_64 ? "org.eclipse.swt.gtk.linux.x86" : ""
 
 // Build javadocs only if BUILD_JAVADOC=true
 defineProperty("BUILD_JAVADOC", "false")
@@ -399,7 +399,7 @@ ext.DO_JCOV = Boolean.parseBoolean(JCOV)
 if (IS_MAC) {
     defineProperty("NUM_COMPILE_THREADS", "1")
 } else {
-    defineProperty("NUM_COMPILE_THREADS", "${Runtime.runtime.availableProcessors()}")
+    defineProperty("NUM_COMPILE_THREADS", "1")
 }
 
 //
@@ -1148,12 +1148,8 @@ allprojects {
     // closed gradle file instead.
     if (!BUILD_CLOSED) {
         repositories {
-            mavenCentral()
-            ivy {
-                url "http://download.eclipse.org/eclipse/updates/3.7/R-3.7.2-201202080800/plugins/"
-                layout "pattern", {
-                    artifact "[artifact].[ext]"
-                }
+            maven {
+                url project.rootProject.rootDir.getAbsolutePath().replaceAll("\\\\", "/") + "/../../deps/openjfx/maven/"
             }
         }
     }
@@ -1299,7 +1295,7 @@ project(":graphics") {
 
     dependencies {
         compile project(":base"), BUILD_SRC
-        compile name: SWT_FILE_NAME
+        compile group: "org.eclipse.platform", name: SWT_FILE_NAME, version: "3.7.2.v3740f"
         stubCompile group: "junit", name: "junit", version: "4.8.2",
         project(":base").sourceSets.test.output, sourceSets.main.output
         antlr3 group: "org.antlr", name: "antlr", version: "3.1.3"
@@ -1680,7 +1676,7 @@ project(":swt") {
     }
     dependencies {
         compile BUILD_SRC, project(":base"), project(":graphics")
-        compile name: SWT_FILE_NAME
+        compile group: "org.eclipse.platform", name: SWT_FILE_NAME, version: "3.7.2.v3740f"
     }
 }
 
@@ -1767,15 +1763,6 @@ project(":systemTests") {
 project(":fxpackager") {
     tasks.all {
         if (!COMPILE_FXPACKAGER) it.enabled = false
-    }
-    // fxpackager has a dependency on ant in order to build the ant jar,
-    // and as such needs to point to the apache binary repository
-    if (!BUILD_CLOSED) {
-        repositories {
-            maven {
-                url "https://repository.apache.org"
-            }
-        }
     }
 
     dependencies {
@@ -2159,7 +2146,7 @@ project(":media") {
         classpath = sourceSets.main.output;
     }
 
-    project.ext.makeJobsFlag = IS_WINDOWS && IS_DEBUG_NATIVE ? "-j1" : "-j5";
+    project.ext.makeJobsFlag = IS_WINDOWS && IS_DEBUG_NATIVE ? "-j1" : "-j1";
     project.ext.buildType = IS_DEBUG_NATIVE ? "Debug" : "Release";
 
     def nativeSrcDir = file("${projectDir}/src/main/native")
