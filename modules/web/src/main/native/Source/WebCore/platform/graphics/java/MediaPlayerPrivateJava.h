@@ -110,7 +110,7 @@ namespace WebCore {
         //virtual void acceleratedRenderingStateChanged() { }
 #endif
 
-        virtual bool hasSingleSecurityOrigin() const { return true; }
+        //virtual bool hasSingleSecurityOrigin() const { return false; }
 
         //virtual MediaPlayer::MovieLoadType movieLoadType() const { return MediaPlayer::Unknown; }
 

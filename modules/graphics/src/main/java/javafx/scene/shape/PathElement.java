@@ -94,7 +94,7 @@ public abstract class PathElement {
 
     public final BooleanProperty absoluteProperty() {
         if (absolute == null) {
-            absolute = new BooleanPropertyBase(true) {
+            absolute = new BooleanPropertyBase() {
                 @Override protected void invalidated() {
                     u();
                 }

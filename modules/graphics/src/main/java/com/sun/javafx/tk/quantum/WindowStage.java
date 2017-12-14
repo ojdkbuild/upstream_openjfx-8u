@@ -26,6 +26,7 @@
 package com.sun.javafx.tk.quantum;
 
 import java.nio.ByteBuffer;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.AllPermission;
 import java.security.Permission;
@@ -330,16 +331,10 @@ class WindowStage extends GlassStage {
     }
 
     @Override public void setMinimumSize(int minWidth, int minHeight) {
-        float pScale = platformWindow.getPlatformScale();
-        minWidth  = (int) Math.ceil(minWidth  * pScale);
-        minHeight = (int) Math.ceil(minHeight * pScale);
         platformWindow.setMinimumSize(minWidth, minHeight);
     }
 
     @Override public void setMaximumSize(int maxWidth, int maxHeight) {
-        float pScale = platformWindow.getPlatformScale();
-        maxWidth  = (int) Math.ceil(maxWidth  * pScale);
-        maxHeight = (int) Math.ceil(maxHeight * pScale);
         platformWindow.setMaximumSize(maxWidth, maxHeight);
     }
 
@@ -592,12 +587,11 @@ class WindowStage extends GlassStage {
 
     private boolean hasPermission(Permission perm) {
         try {
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(perm, getAccessControlContext());
+            if (System.getSecurityManager() != null) {
+                getAccessControlContext().checkPermission(perm);
             }
             return true;
-        } catch (SecurityException se) {
+        } catch (AccessControlException ae) {
             return false;
         }
     }
@@ -632,7 +626,6 @@ class WindowStage extends GlassStage {
                 final boolean isTrusted = isTrustedFullScreen();
                 if (!isTrusted && !fullScreenFromUserEvent) {
                     exitFullScreen();
-                    fullscreenChanged(false);
                 } else {
                     v.enterFullscreen(false, false, false);
                     if (warning != null && warning.inWarningTransition()) {

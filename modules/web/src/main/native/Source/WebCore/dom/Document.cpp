@@ -4284,20 +4284,11 @@ Document* Document::parentDocument() const
 
 Document& Document::topDocument() const
 {
-    // FIXME: This special-casing avoids incorrectly determined top documents during the process
-    // of AXObjectCache teardown or notification posting for cached or being-destroyed documents.
-    if (!m_inPageCache && !m_renderTreeBeingDestroyed) {
-        if (!m_frame)
-            return const_cast<Document&>(*this);
-        // This should always be non-null.
-        Document* mainFrameDocument = m_frame->mainFrame().document();
-        return mainFrameDocument ? *mainFrameDocument : const_cast<Document&>(*this);
-    }
-
-    Document* document = const_cast<Document*>(this);
-    while (HTMLFrameOwnerElement* element = document->ownerElement())
-        document = &element->document();
-    return *document;
+    if (!m_frame)
+        return const_cast<Document&>(*this);
+    // This should always be non-null.
+    Document* mainFrameDocument = m_frame->mainFrame().document();
+    return mainFrameDocument ? *mainFrameDocument : const_cast<Document&>(*this);
 }
 
 PassRefPtr<Attr> Document::createAttribute(const String& name, ExceptionCode& ec)

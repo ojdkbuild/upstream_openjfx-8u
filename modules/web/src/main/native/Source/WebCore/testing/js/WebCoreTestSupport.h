@@ -28,7 +28,7 @@
 
 typedef const struct OpaqueJSContext* JSContextRef;
 
-#if PLATFORM(COCOA) || PLATFORM(JAVA)
+#if PLATFORM(COCOA)
 #define TEST_SUPPORT_EXPORT WTF_EXPORT_PRIVATE
 #else
 #define TEST_SUPPORT_EXPORT
@@ -36,8 +36,8 @@ typedef const struct OpaqueJSContext* JSContextRef;
 
 namespace WebCoreTestSupport {
 
-TEST_SUPPORT_EXPORT void injectInternalsObject(JSContextRef);
-TEST_SUPPORT_EXPORT void resetInternalsObject(JSContextRef);
+void injectInternalsObject(JSContextRef) TEST_SUPPORT_EXPORT;
+void resetInternalsObject(JSContextRef) TEST_SUPPORT_EXPORT;
 
 } // namespace WebCore
 

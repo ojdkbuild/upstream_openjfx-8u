@@ -529,9 +529,16 @@ final public class StyleManager {
 
         synchronized (styleLock) {
             // RT-34863 - clean up CSS cache when Parent is removed from scene-graph
-            CacheContainer removedContainer = cacheContainerMap.remove(parent);
-            if (removedContainer != null) {
-                removedContainer.clearCache();
+            Set<Entry<Parent, CacheContainer>> entrySet = cacheContainerMap.entrySet();
+            Iterator<Entry<Parent, CacheContainer>> iterator = entrySet.iterator();
+            while (iterator.hasNext()) {
+                Entry<Parent, CacheContainer> entry = iterator.next();
+                Parent key = entry.getKey();
+                CacheContainer container = entry.getValue();
+                if (parent == key) {
+                    iterator.remove();
+                    container.clearCache();
+                }
             }
 
             final List<String> stylesheets = parent.getStylesheets();

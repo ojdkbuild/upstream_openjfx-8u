@@ -206,8 +206,7 @@ PassOwnPtr<Pasteboard> Pasteboard::createForCopyAndPaste()
 {
     // Use single shared data instance for all copy'n'paste pasteboards.
     static RefPtr<DataObjectJava> data = DataObjectJava::create();
-    // TODO: setURL, setFiles, setData, setHtml (needs URL)
-    data->setPlainText(jGetPlainText());
+
     return adoptPtr(new Pasteboard(data, true));
 }
 
@@ -308,26 +307,8 @@ void Pasteboard::writeImage(Element& node, const URL& url, const String& title)
         }
     }
     if (m_copyPasteMode) {
-        CachedImage* cachedImage = getCachedImage(node);
-        // CachedImage not exist
-        if (!cachedImage) {
-            return;
-        }
-
-        Image* image = cachedImage->image();
-        // Image data not exist
-        if (!image) {
-            return;
-        }
-
-        // SVGImage are not Bitmap backed, Let the receiving end decode the svg image
-        // based on url and its markup
-        if (image->isSVGImage()) {
-            jWriteURL(url.string(), createMarkup(node));
-        }
-        else {
-            jWriteImage(*image);
-        }
+        Image* image = getCachedImage(node)->image();
+        jWriteImage(*image);
     }
 }
 

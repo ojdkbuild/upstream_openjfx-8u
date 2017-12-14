@@ -406,27 +406,18 @@ public final class ScrollBarThemeImpl extends ScrollBarTheme {
     }
 
     private static Node getThumb(ScrollBar scrollBar) {
-        return findNode(scrollBar, "thumb");
+        return ((ScrollBarSkin)scrollBar.getSkin()).getThumb();
     }
 
     private static Node getTrack(ScrollBar scrollBar) {
-        return findNode(scrollBar, "track");
+        return ((ScrollBarSkin)scrollBar.getSkin()).getTrack();
     }
 
     private static Node getIncButton(ScrollBar scrollBar) {
-        return findNode(scrollBar, "increment-button");
+        return ((ScrollBarSkin)scrollBar.getSkin()).getIncButton();
     }
 
     private static Node getDecButton(ScrollBar scrollBar) {
-        return findNode(scrollBar, "decrement-button");
-    }
-
-    private static Node findNode(ScrollBar scrollBar, String styleclass) {
-        for (Node n : scrollBar.getChildrenUnmodifiable()) {
-            if (n.getStyleClass().contains(styleclass)) {
-                return n;
-            }
-        }
-        return null;
+        return ((ScrollBarSkin)scrollBar.getSkin()).getDecButton();
     }
 }

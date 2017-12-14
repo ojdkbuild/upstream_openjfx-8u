@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import com.sun.javafx.geom.PathIterator;
 import com.sun.javafx.sg.prism.NGPath;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.BooleanProperty;
 import javafx.scene.Group;
 import javafx.scene.NodeTest;
 import javafx.scene.Scene;
@@ -38,8 +37,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import javafx.scene.shape.VLineTo;
-import javafx.scene.shape.PathElement;
 
 import static org.junit.Assert.*;
 
@@ -143,12 +140,5 @@ public class PathTest {
         String s = new Path().toString();
         assertNotNull(s);
         assertFalse(s.isEmpty());
-    }
-
-    @Test public void testPathElementIsAbsoluteAfterAbsoluteProperty() {
-        PathElement element = new VLineTo();
-        assertTrue(element.isAbsolute());
-        assertTrue(element.absoluteProperty().getValue());
-        assertTrue(element.isAbsolute());
     }
 }

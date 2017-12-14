@@ -247,9 +247,8 @@ public final class NumberAxis extends ValueAxis<Number> {
             } else {
                 if (lowerBound + tickUnit < upperBound) {
                     // If tickUnit is integer, start with the nearest integer
-                    double major = Math.rint(tickUnit) == tickUnit ? Math.ceil(lowerBound) : lowerBound + tickUnit;
-                    int count = (int)Math.ceil((upperBound - major)/tickUnit);
-                    for (int i = 0; major < upperBound && i < count; major += tickUnit, i++) {
+                    double first = Math.rint(tickUnit) == tickUnit ? Math.ceil(lowerBound) : lowerBound + tickUnit;
+                    for (double major = first; major < upperBound; major += tickUnit) {
                         if (!tickValues.contains(major)) {
                             tickValues.add(major);
                         }
@@ -281,21 +280,16 @@ public final class NumberAxis extends ValueAxis<Number> {
             }
             final boolean tickUnitIsInteger = Math.rint(tickUnit) == tickUnit;
             if (tickUnitIsInteger) {
-                double minor = Math.floor(lowerBound) + minorUnit;
-                int count = (int)Math.ceil((Math.ceil(lowerBound) - minor)/minorUnit);
-                for (int i = 0; minor < Math.ceil(lowerBound) && i < count; minor += minorUnit, i++) {
+                for (double minor = Math.floor(lowerBound) + minorUnit; minor < Math.ceil(lowerBound); minor += minorUnit) {
                     if (minor > lowerBound) {
                         minorTickMarks.add(minor);
                     }
                 }
             }
             double major = tickUnitIsInteger ? Math.ceil(lowerBound) : lowerBound;
-            int count = (int)Math.ceil((upperBound - major)/tickUnit);
-            for (int i = 0; major < upperBound && i < count; major += tickUnit, i++)  {
+            for (; major < upperBound; major += tickUnit)  {
                 final double next = Math.min(major + tickUnit, upperBound);
-                double minor = major + minorUnit;
-                int minorCount = (int)Math.ceil((next - minor)/minorUnit);
-                for (int j = 0; minor < next && j < minorCount; minor += minorUnit, j++) {
+                for (double minor = major + minorUnit; minor < next; minor += minorUnit) {
                     minorTickMarks.add(minor);
                 }
             }
@@ -355,21 +349,9 @@ public final class NumberAxis extends ValueAxis<Number> {
                 minValue = 0;
             }
         }
-        // calculate the number of tick-marks we can fit in the given length
-        int numOfTickMarks = (int)Math.floor(length/labelSize);
-        // can never have less than 2 tick marks one for each end
-        numOfTickMarks = Math.max(numOfTickMarks, 2);
-        int minorTickCount = Math.max(getMinorTickCount(), 1);
-
-        double range = maxValue-minValue;
-
-        if (range != 0 && range/(numOfTickMarks*minorTickCount) <= Math.ulp(minValue)) {
-            range = 0;
-        }
+        final double range = maxValue-minValue;
         // pad min and max by 2%, checking if the range is zero
-        final double paddedRange = (range == 0)
-                ? minValue == 0 ? 2 : Math.abs(minValue)*0.02
-                : Math.abs(range)*1.02;
+        final double paddedRange = (range==0) ? 2 : Math.abs(range)*1.02;
         final double padding = (paddedRange - range) / 2;
         // if min and max are not zero then add padding to them
         double paddedMin = minValue - padding;
@@ -383,6 +365,10 @@ public final class NumberAxis extends ValueAxis<Number> {
             // padding pushed min above or below zero so clamp to 0
             paddedMax = 0;
         }
+        // calculate the number of tick-marks we can fit in the given length
+        int numOfTickMarks = (int)Math.floor(length/labelSize);
+        // can never have less than 2 tick marks one for each end
+        numOfTickMarks = Math.max(numOfTickMarks, 2);
         // calculate tick unit for the number of ticks can have in the given data range
         double tickUnit = paddedRange/(double)numOfTickMarks;
         // search for the best tick unit that fits
@@ -426,12 +412,11 @@ public final class NumberAxis extends ValueAxis<Number> {
             // huge numbers involved etc or special formatting of the tick mark label text
             double maxReqTickGap = 0;
             double last = 0;
-            count = (int)Math.ceil((maxRounded - minRounded)/tickUnitRounded);
-            double major = minRounded;
-            for (int i = 0; major <= maxRounded && i < count; major += tickUnitRounded, i++)  {
-                Dimension2D markSize = measureTickMarkSize(major, getTickLabelRotation(), formatter);
-                double size = side.isVertical() ? markSize.getHeight() : markSize.getWidth();
-                if (i == 0) { // first
+            count = 0;
+            for (double major = minRounded; major <= maxRounded; major += tickUnitRounded, count ++)  {
+                double size = side.isVertical() ? measureTickMarkSize(major, getTickLabelRotation(), formatter).getHeight() :
+                                            measureTickMarkSize(major, getTickLabelRotation(), formatter).getWidth();
+                if (major == minRounded) { // first
                     last = size/2;
                 } else {
                     maxReqTickGap = Math.max(maxReqTickGap, last + 6 + (size/2) );
