@@ -1,0 +1,9 @@
+/.gradle/
+/build.properties
+/gradle.properties
+/build
+/buildSrc/.gradle/  
+/buildSrc/build/                   
+/modules/*/build/
+/tests/system/build/       
+/run-gradle.bat
