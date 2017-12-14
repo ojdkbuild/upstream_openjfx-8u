@@ -1,6 +1,28 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
- */
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+*/
+
 #include "config.h"
 
 #include "PasteboardUtilitiesJava.h"
@@ -17,7 +39,7 @@
 #include "NotImplemented.h"
 #include "DataObjectJava.h"
 #include "DragData.h"
-#include "JavaEnv.h"
+#include <wtf/java/JavaEnv.h>
 #include <wtf/java/JavaRef.h>
 #include <wtf/text/WTFString.h>
 #include <wtf/text/StringBuilder.h>
@@ -125,7 +147,7 @@ CachedImage* getCachedImage(const Element& element)
     return 0;
 }
 
-void writeImageToDataObject(PassRefPtr<DataObjectJava> dataObject, const Element& element, const URL& url)
+void writeImageToDataObject(RefPtr<DataObjectJava> dataObject, const Element& element, const URL&)
 {
     if (!dataObject) {
         return;
@@ -186,14 +208,18 @@ String imageToMarkup(const String& url, const Element& element)
 // WebCore::Pasteboard impl
 ///////////////////////////
 
-Pasteboard::Pasteboard(PassRefPtr<DataObjectJava> dataObject, bool copyPasteMode = false) :
-    m_dataObject(dataObject),
+Pasteboard::Pasteboard(RefPtr<DataObjectJava> dataObject, bool copyPasteMode = false)
+  : m_dataObject(dataObject),
     m_copyPasteMode(copyPasteMode)
 {
     ASSERT(m_dataObject);
 }
 
-std::unique_ptr<Pasteboard> Pasteboard::create(PassRefPtr<DataObjectJava> dataObject)
+Pasteboard::Pasteboard() : Pasteboard(DataObjectJava::create())
+{
+}
+
+std::unique_ptr<Pasteboard> Pasteboard::create(RefPtr<DataObjectJava> dataObject)
 {
     return std::unique_ptr<Pasteboard>(new Pasteboard(dataObject));
 }
@@ -223,7 +249,7 @@ std::unique_ptr<Pasteboard> Pasteboard::createForDragAndDrop(const DragData& dra
     return create(dragData.platformData());
 }
 
-void Pasteboard::setDragImage(DragImageRef image, const IntPoint& hotSpot)
+void Pasteboard::setDragImage(DragImage, const IntPoint&)
 {
 }
 #endif
@@ -420,7 +446,7 @@ bool Pasteboard::canSmartReplace()
     return false;
 }
 
-PassRefPtr<DocumentFragment> Pasteboard::documentFragment(
+RefPtr<DocumentFragment> Pasteboard::documentFragment(
     Frame& frame,
     Range& range,
     bool allowPlainText,
@@ -433,7 +459,7 @@ PassRefPtr<DocumentFragment> Pasteboard::documentFragment(
         m_dataObject ? m_dataObject->asHTML() : String();
 
     if (!htmlString.isNull()) {
-        if (PassRefPtr<DocumentFragment> fragment = createFragmentFromMarkup(
+        if (RefPtr<DocumentFragment> fragment = createFragmentFromMarkup(
                 *frame.document(),
                 htmlString,
                 String(),
@@ -444,7 +470,7 @@ PassRefPtr<DocumentFragment> Pasteboard::documentFragment(
     }
 
     if (!allowPlainText) {
-        return 0;
+        return nullptr;
     }
 
     String plainTextString = m_copyPasteMode ?
@@ -453,14 +479,14 @@ PassRefPtr<DocumentFragment> Pasteboard::documentFragment(
 
     if (!plainTextString.isNull()) {
         chosePlainText = true;
-        if (PassRefPtr<DocumentFragment> fragment = createFragmentFromText(
+        if (RefPtr<DocumentFragment> fragment = createFragmentFromText(
                 range,
                 plainTextString))
         {
             return fragment;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 void Pasteboard::writePasteboard(const Pasteboard& sourcePasteboard)
@@ -474,6 +500,27 @@ void Pasteboard::writePasteboard(const Pasteboard& sourcePasteboard)
         if (data->containsHTML()) jWriteSelection(false, data->asPlainText(), data->asHTML());
         if (data->containsPlainText()) jWritePlainText(data->asPlainText());
     }
+}
+
+void Pasteboard::read(PasteboardWebContentReader&)
+{
+}
+
+void Pasteboard::write(const PasteboardImage&)
+{
+}
+
+void Pasteboard::write(const PasteboardWebContent&)
+{
+}
+
+void Pasteboard::writeMarkup(const String&)
+{
+}
+
+void Pasteboard::writeTrustworthyWebURLsPboardType(const PasteboardURL&)
+{
+    notImplemented();
 }
 
 } // namespace WebCore

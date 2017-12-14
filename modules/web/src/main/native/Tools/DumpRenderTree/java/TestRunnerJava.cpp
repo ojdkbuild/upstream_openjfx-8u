@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 #include "config.h"
 #include "JavaEnv.h"
@@ -10,6 +10,8 @@
 #include <wtf/java/JavaRef.h>
 #include <JavaScriptCore/JSRetainPtr.h>
 #include <JavaScriptCore/JSStringRef.h>
+
+extern JSGlobalContextRef gContext;
 
 jclass getDRTClass(JNIEnv* env)
 {
@@ -565,4 +567,30 @@ void TestRunner::removeAllWebNotificationPermissions()
 
 void TestRunner::simulateWebNotificationClick(JSValueRef jsNotification)
 {
+}
+
+JSContextRef TestRunner::mainFrameJSContext()
+{
+    return gContext;
+}
+
+void TestRunner::setViewSize(double width, double height)
+{
+    fprintf(testResult, "ERROR: TestRunner::setViewSize() not implemented\n");
+}
+
+void TestRunner::setSpellCheckerLoggingEnabled(bool enabled)
+{
+    fprintf(testResult, "ERROR: TestRunner::setSpellCheckerLoggingEnabled() not implemented\n");
+}
+
+void TestRunner::setNeedsStorageAccessFromFileURLsQuirk(bool needsQuirk)
+{
+    fprintf(testResult, "ERROR: TestRunner::setNeedsStorageAccessFromFileURLsQuirk() not implemented\n");
+}
+
+unsigned TestRunner::imageCountInGeneralPasteboard() const
+{
+    fprintf(testResult, "ERROR: TestRunner::imageCountInGeneralPasteboard() not implemented\n");
+    return 0;
 }

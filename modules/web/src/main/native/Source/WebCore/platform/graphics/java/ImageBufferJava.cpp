@@ -1,13 +1,11 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  */
+
 #include "config.h"
 
-#if COMPILER(GCC)
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-
 #include "BufferImageJava.h"
+
 #include <wtf/text/CString.h>
 #include "GraphicsContext.h"
 #include "ImageBuffer.h"
@@ -27,8 +25,8 @@ namespace WebCore {
 ImageBufferData::ImageBufferData(
     const FloatSize& size,
     ImageBuffer &rq_holder,
-    float resolutionScale
-) : m_rq_holder(rq_holder)
+    float resolutionScale)
+  : m_rq_holder(rq_holder)
 {
     JNIEnv* env = WebCore_GetJavaEnv();
 
@@ -96,8 +94,8 @@ ImageBuffer::ImageBuffer(
     bool& success
 )
     : m_data(size, *this, resolutionScale)
-    , m_resolutionScale(resolutionScale)
     , m_logicalSize(size)
+    , m_resolutionScale(resolutionScale)
 {
     // RT-10059: ImageBufferData construction may fail if the requested
     // image size is too large. In that case we exit immediately,
@@ -149,7 +147,7 @@ GraphicsContext& ImageBuffer::context() const
     return *m_data.m_context.get();
 }
 
-RefPtr<Image> ImageBuffer::copyImage(BackingStoreCopy copyBehavior, ScaleBehavior scaleBehavior) const
+RefPtr<Image> ImageBuffer::copyImage(BackingStoreCopy, ScaleBehavior) const
 {
     //utatodo: seems [copyBehavior] is the rest of [drawsUsingCopy]
     return BufferImage::create(
@@ -163,7 +161,7 @@ BackingStoreCopy ImageBuffer::fastCopyImageMode()
     return CopyBackingStore; // todo tav revise
 }
 
-void ImageBuffer::platformTransformColorSpace(const Vector<int> &lookUpTable)
+void ImageBuffer::platformTransformColorSpace(const Vector<int>&)
 {
     notImplemented();
 /*
@@ -189,7 +187,7 @@ void ImageBuffer::platformTransformColorSpace(const Vector<int> &lookUpTable)
 */
 }
 
-PassRefPtr<Uint8ClampedArray> getImageData(
+RefPtr<Uint8ClampedArray> getImageData(
     const Multiply multiplied,
     const ImageBufferData &idata,
     const IntRect& rect,
@@ -269,14 +267,20 @@ PassRefPtr<Uint8ClampedArray> getImageData(
     return result;
 }
 
-PassRefPtr<Uint8ClampedArray> ImageBuffer::getUnmultipliedImageData(const IntRect& rect, CoordinateSystem) const
+RefPtr<Uint8ClampedArray> ImageBuffer::getUnmultipliedImageData(const IntRect& rect, CoordinateSystem coordinateSystem) const
 {
-    return getImageData(Unmultiplied, m_data, rect, m_size);
+    IntRect srcRect = rect;
+    if (coordinateSystem == LogicalCoordinateSystem)
+        srcRect.scale(m_resolutionScale);
+    return getImageData(Unmultiplied, m_data, srcRect, m_size);
 }
 
-PassRefPtr<Uint8ClampedArray> ImageBuffer::getPremultipliedImageData(const IntRect& rect, CoordinateSystem) const
+RefPtr<Uint8ClampedArray> ImageBuffer::getPremultipliedImageData(const IntRect& rect, CoordinateSystem coordinateSystem) const
 {
-    return getImageData(Premultiplied, m_data, rect, m_size);
+    IntRect srcRect = rect;
+    if (coordinateSystem == LogicalCoordinateSystem)
+        srcRect.scale(m_resolutionScale);
+    return getImageData(Premultiplied, m_data, srcRect, m_size);
 }
 
 void ImageBuffer::putByteArray(
@@ -285,39 +289,46 @@ void ImageBuffer::putByteArray(
     const IntSize& sourceSize,
     const IntRect& sourceRect,
     const IntPoint& destPoint,
-    CoordinateSystem)
+    CoordinateSystem coordinateSystem)
 {
     // This code was adapted from the CG implementation
 
-    ASSERT(sourceRect.width() > 0);
-    ASSERT(sourceRect.height() > 0);
+    IntRect scaledSourceRect = sourceRect;
+    IntSize scaledSourceSize = sourceSize;
+    if (coordinateSystem == LogicalCoordinateSystem) {
+        scaledSourceRect.scale(m_resolutionScale);
+        scaledSourceSize.scale(m_resolutionScale);
+    }
 
-    int originx = sourceRect.x();
-    int destx = destPoint.x() + sourceRect.x();
+    ASSERT(scaledSourceRect.width() > 0);
+    ASSERT(scaledSourceRect.height() > 0);
+
+    int originx = scaledSourceRect.x();
+    int destx = destPoint.x() + scaledSourceRect.x();
     ASSERT(destx >= 0);
     ASSERT(destx < m_size.width());
     ASSERT(originx >= 0);
-    ASSERT(originx <= sourceRect.maxX());
+    ASSERT(originx <= scaledSourceRect.maxX());
 
-    int endx = destPoint.x() + sourceRect.maxX();
+    int endx = destPoint.x() + scaledSourceRect.maxX();
     ASSERT(endx <= m_size.width());
     int width = endx - destx;
 
-    int originy = sourceRect.y();
-    int desty = destPoint.y() + sourceRect.y();
+    int originy = scaledSourceRect.y();
+    int desty = destPoint.y() + scaledSourceRect.y();
     ASSERT(desty >= 0);
     ASSERT(desty < m_size.height());
     ASSERT(originy >= 0);
-    ASSERT(originy <= sourceRect.maxY());
+    ASSERT(originy <= scaledSourceRect.maxY());
 
-    int endy = destPoint.y() + sourceRect.maxY();
+    int endy = destPoint.y() + scaledSourceRect.maxY();
     ASSERT(endy <= m_size.height());
     int height = endy - desty;
 
     if (width <= 0 || height <= 0)
         return;
 
-    unsigned srcBytesPerRow = 4 * sourceSize.width();
+    unsigned srcBytesPerRow = 4 * scaledSourceSize.width();
     unsigned char* srcRows =
             source->data() + originy * srcBytesPerRow + originx * 4;
     unsigned dstBytesPerRow = 4 * m_size.width();
@@ -378,23 +389,23 @@ void ImageBuffer::draw(
 
 void ImageBuffer::drawPattern(
     GraphicsContext& context,
+    const FloatRect& destRect,
     const FloatRect& srcRect,
     const AffineTransform& patternTransform,
     const FloatPoint& phase,
     const FloatSize& spacing,
     CompositeOperator op,
-    const FloatRect& destRect,
     BlendMode bm) // todo tav new param
 {
     RefPtr<Image> imageCopy = copyImage();
     imageCopy->drawPattern(
         context,
+        destRect,
         srcRect,
         patternTransform,
         phase,
         spacing,
         op,
-        destRect,
         bm);
 }
 
@@ -403,7 +414,7 @@ RefPtr<Image> ImageBuffer::sinkIntoImage(std::unique_ptr<ImageBuffer> imageBuffe
     return imageBuffer->copyImage(DontCopyBackingStore, scaleBehavior);
 }
 
-String ImageBuffer::toDataURL(const String& mimeType, const double* quality, CoordinateSystem) const
+String ImageBuffer::toDataURL(const String& mimeType, std::optional<double>, CoordinateSystem) const
 {
     if (MIMETypeRegistry::isSupportedImageMIMETypeForEncoding(mimeType)) {
         //RenderQueue need to be processed before pixel buffer extraction.

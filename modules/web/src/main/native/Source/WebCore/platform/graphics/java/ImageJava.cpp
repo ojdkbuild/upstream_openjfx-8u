@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 #include "config.h"
 
@@ -12,7 +12,7 @@
 #include "FloatRect.h"
 #include "GraphicsContext.h"
 #include "TransformationMatrix.h"
-#include "JavaEnv.h"
+#include <wtf/java/JavaEnv.h>
 #include "com_sun_webkit_graphics_GraphicsDecoder.h"
 #include "GraphicsContextJava.h"
 #include "PlatformContextJava.h"
@@ -22,8 +22,8 @@ class ImageBuffer;
 
 namespace WebCore {
 
-void Image::drawPattern(GraphicsContext& gc, const FloatRect& srcRect, const AffineTransform& patternTransform,
-                        const FloatPoint& phase, const FloatSize& /*spacing*/, CompositeOperator, const FloatRect& destRect, BlendMode)
+void Image::drawPattern(GraphicsContext& gc, const FloatRect& destRect, const FloatRect& srcRect, const AffineTransform& patternTransform,
+    const FloatPoint& phase, const FloatSize&, CompositeOperator, BlendMode)
 {
     JNIEnv* env = WebCore_GetJavaEnv();
 
