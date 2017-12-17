@@ -2522,8 +2522,9 @@ project(":web") {
 
             exec {
                 workingDir("$projectDir/src/main/native")
-                def cmakeArgs = "-DENABLE_TOOLS=1"
+                def cmakeArgs = "-DENABLE_TOOLS=1 -DENABLE_WEBVTT_REGIONS=ON"
                 if (t.name == "win") {
+                    cmakeArgs = "$cmakeArgs -DCMAKE_CXX_FLAGS=-bigobj"
                     String parfaitPath = IS_COMPILE_PARFAIT ? System.getenv().get("PARFAIT_PATH") + ";" : "";
                     Map environmentSettings = new HashMap(WINDOWS_NATIVE_COMPILE_ENVIRONMENT)
                     environmentSettings["PATH"] = parfaitPath + "$WINDOWS_VS_PATH"

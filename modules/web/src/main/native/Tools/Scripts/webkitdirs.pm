@@ -1981,11 +1981,12 @@ sub generateBuildSystemFromCMakeProject
         }
     } elsif (isJava() && isAnyWindows()) {
         push @args, "-G";
-        if (isWin64()) {
-            push @args, "'Visual Studio 15 2017 Win64'";
-        } else {
-            push @args, "'Visual Studio 15 2017'";
-        }
+        push @args, "\"NMake Makefiles\"";
+        #if (isWin64()) {
+        #    push @args, "'Visual Studio 15 2017 Win64'";
+        #} else {
+        #    push @args, "'Visual Studio 15 2017'";
+        #}
     } elsif (isAnyWindows() && isWin64()) {
         push @args, '-G "Visual Studio 14 2015 Win64"';
     }

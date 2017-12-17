@@ -2,8 +2,10 @@
 /build.properties
 /gradle.properties
 /build
-/buildSrc/.gradle/  
-/buildSrc/build/                   
+/buildSrc/.gradle/
+/buildSrc/build/
 /modules/*/build/
-/tests/system/build/       
+/tests/system/build/
 /run-gradle.bat
+*.pyc
+/modules/web/src/main/native/Source/ThirdParty/icu/source/data/in/icudt51l.dat
