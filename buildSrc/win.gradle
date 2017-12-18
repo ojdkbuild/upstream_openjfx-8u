@@ -76,7 +76,7 @@ setupTools("windows_tools",
         defineProperty("WINDOWS_VS_MSVCDIR", properties, WINDOWS_VS_VCINSTALLDIR)
         defineProperty("WINDOWS_DXSDK_DIR", properties, System.getenv("DXSDK_DIR"))
         defineProperty("WINDOWS_VS_INCLUDE", properties, System.getenv("INCLUDE"))
-        defineProperty("WINDOWS_VS_VER", properties, "150")
+        defineProperty("WINDOWS_VS_VER", properties, "141")
         defineProperty("WINDOWS_VS_LIB", properties, System.getenv("LIB"))
         defineProperty("WINDOWS_VS_LIBPATH", properties, System.getenv("LIBPATH"))
         def parfaitPath = IS_COMPILE_PARFAIT ? System.getenv("PARFAIT_PATH") + ";" : "";
@@ -129,7 +129,7 @@ ext.WINDOWS_NATIVE_COMPILE_ENVIRONMENT = [
         "DXSDK_DIR"            : WINDOWS_DXSDK_DIR
 ];
 def msvcBinDir = ""
-if (winVsVer == 150) {
+if (winVsVer == 141) {
     msvcBinDir = (IS_64
                       ? "$WINDOWS_VS_VSINSTALLDIR/VC/Tools/MSVC/14.12.25827/bin/HostX64/x64"
                       : "$WINDOWS_VS_VSINSTALLDIR/VC/Tools/MSVC/14.12.25827/bin/HostX86/x86")
@@ -181,7 +181,7 @@ def WINDOWS_DLL_VER = WINDOWS_VS_VER
 ext.MSVCR = cygpath(System.getenv("MSVCR100_DIR") + "/msvcr${WINDOWS_VS_VER}.dll")
 ext.MSVCP = cygpath(System.getenv("MSVCR100_DIR") + "/msvcp${WINDOWS_VS_VER}.dll")
 
-if (WINDOWS_VS_VER == "150") {
+if (WINDOWS_VS_VER == "141") {
     WINDOWS_DLL_VER = "140"
     ext.MSVCR = cygpath("${msvcRedstDir}/Microsoft.VC${WINDOWS_VS_VER}.CRT/vcruntime${WINDOWS_DLL_VER}.dll")
     ext.MSVCP = cygpath("${msvcRedstDir}/Microsoft.VC${WINDOWS_VS_VER}.CRT/msvcp${WINDOWS_DLL_VER}.dll")
@@ -200,8 +200,7 @@ if (file(vs2017DllPath).exists()) {
         }
 }
 else {
-    ext.WIN.VS2017DLLs = [
-    ];
+    throw new GradleException("FAIL: VS2017DLLs not found");
 }
 
 def WinSDKDLLsPath = cygpath("${winSdkDllDir}")
