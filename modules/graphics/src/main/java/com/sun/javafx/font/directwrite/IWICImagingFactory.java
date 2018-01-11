@@ -31,6 +31,10 @@ class IWICImagingFactory extends IUnknown {
     }
 
     IWICBitmap CreateBitmap(int uiWidth, int uiHeight, int pixelFormat, int options) {
+        if ("true".equals(System.getProperty("java.awt.headless"))) {
+            System.err.println("Warning: using IWICImagingFactory in headless mode may be unsafe," +
+                    " see: https://bugs.openjdk.java.net/browse/JDK-8087581");
+        }
         long result = OS.CreateBitmap(ptr, uiWidth, uiHeight, pixelFormat, options);
         return result != 0 ? new IWICBitmap(result) : null;
     }
