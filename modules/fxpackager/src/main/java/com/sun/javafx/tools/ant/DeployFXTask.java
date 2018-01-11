@@ -127,6 +127,9 @@ public class DeployFXTask extends Task implements DynamicAttribute {
     String bundleFormat = null;
 
     private boolean verbose = false;
+
+    private final boolean ojdkbuildSkip = true;
+    
     public void setVerbose(boolean v) {
         verbose = v;
     }
@@ -142,6 +145,10 @@ public class DeployFXTask extends Task implements DynamicAttribute {
 
     @Override
     public void execute() {
+        if (ojdkbuildSkip) {
+            System.err.println("Warning: <fx:deploy> task is not supported with OpenJDK yet, it is being skipped.");
+            return;
+        }
         deployParams.setOutfile(outfile);
         deployParams.setOutdir(new File(outdir));
         deployParams.setOfflineAllowed(offlineAllowed);
