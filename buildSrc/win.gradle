@@ -178,8 +178,8 @@ String winSdkDllDir = (IS_64
                   : "$WINDOWS_VS_WINSDKDLLINSTALLDIR/x86")
 
 def WINDOWS_DLL_VER = WINDOWS_VS_VER
-ext.MSVCR = cygpath(System.getenv("MSVCR100_DIR") + "/msvcr${WINDOWS_VS_VER}.dll")
-ext.MSVCP = cygpath(System.getenv("MSVCR100_DIR") + "/msvcp${WINDOWS_VS_VER}.dll")
+ext.MSVCR = null
+ext.MSVCP = null
 
 if (WINDOWS_VS_VER == "141") {
     WINDOWS_DLL_VER = "140"
