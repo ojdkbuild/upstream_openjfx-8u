@@ -1939,7 +1939,7 @@ sub cmakeGeneratedBuildfile(@)
     if ($willUseNinja) {
         return File::Spec->catfile(baseProductDir(), configuration(), "build.ninja")
     } elsif (isAnyWindows()) {
-        return File::Spec->catfile(baseProductDir(), configuration(), "WebKit.sln")
+        return File::Spec->catfile(baseProductDir(), configuration(), "Makefile")
     } else {
         return File::Spec->catfile(baseProductDir(), configuration(), "Makefile")
     }
