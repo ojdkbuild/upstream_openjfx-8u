@@ -21,7 +21,7 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
-*/
+ */
 
 #include "config.h"
 
@@ -67,7 +67,7 @@ IntSize nativeImageSize(const NativeImagePtr& image)
     return frameSize;
 }
 
-bool nativeImageHasAlpha(const NativeImagePtr& image)
+bool nativeImageHasAlpha(const NativeImagePtr&)
 {
     // FIXME-java: Get alpha details from ImageMetadata class
     return true;

@@ -9,6 +9,7 @@
 #include <JavaScriptCore/CallFrame.h>
 #include <JavaScriptCore/Identifier.h>
 
+#include "Document.h"
 #include "Frame.h"
 #include "JavaInstanceJSC.h"
 #include "JavaArrayJSC.h"
@@ -42,24 +43,10 @@
   return cls
 #endif
 
-static jclass getJSObjectClass (JNIEnv *env)
-{
-    FIND_CACHE_CLASS(env, "com/sun/webkit/dom/JSObject");
-}
-
-static jclass getJSExceptionClass (JNIEnv *env)
-{
-    FIND_CACHE_CLASS(env, "netscape/javascript/JSException");
-}
-
+#if 0
 static jclass getNodeImplClass (JNIEnv *env)
 {
     FIND_CACHE_CLASS(env, "com/sun/webkit/dom/NodeImpl");
-}
-
-static jclass getNumberClass (JNIEnv *env)
-{
-    FIND_CACHE_CLASS(env, "java/lang/Number");
 }
 
 static jclass getDoubleClass (JNIEnv *env)
@@ -70,6 +57,22 @@ static jclass getDoubleClass (JNIEnv *env)
 static jclass getIntegerClass (JNIEnv *env)
 {
     FIND_CACHE_CLASS(env, "java/lang/Integer");
+}
+#endif
+
+static jclass getJSObjectClass (JNIEnv *env)
+{
+    FIND_CACHE_CLASS(env, "com/sun/webkit/dom/JSObject");
+}
+
+static jclass getJSExceptionClass (JNIEnv *env)
+{
+    FIND_CACHE_CLASS(env, "netscape/javascript/JSException");
+}
+
+static jclass getNumberClass (JNIEnv *env)
+{
+    FIND_CACHE_CLASS(env, "java/lang/Number");
 }
 
 static jclass getBooleanClass (JNIEnv *env)
@@ -120,6 +123,7 @@ JSValueRef Java_Object_to_JSValue(
     if (val == NULL)
         return JSValueMakeNull(ctx);
     JSC::ExecState* exec = toJS(ctx);
+    JSC::JSLockHolder lock(exec);
 
     jclass clJSObject = getJSObjectClass(env);
     if (env->IsInstanceOf(val, clJSObject)) {
@@ -127,7 +131,6 @@ JSValueRef Java_Object_to_JSValue(
         static jfieldID fldPeerType = env->GetFieldID(clJSObject, "peer_type", "I");
         jlong peer = env->GetLongField(val, fldPeer);
         jint peer_type = env->GetIntField(val, fldPeerType);
-        JSC::JSObject *jobject = 0;
         switch (peer_type) {
         case com_sun_webkit_dom_JSObject_JS_CONTEXT_OBJECT:
             return static_cast<JSObjectRef>(jlong_to_ptr(peer));
@@ -176,7 +179,7 @@ JSValueRef Java_Object_to_JSValue(
     }
     else {
         // All other Java Object types including java.lang.Character will be wrapped inside JavaInstance.
-        PassRefPtr<JSC::Bindings::JavaInstance> jinstance = JSC::Bindings::JavaInstance::create(val, rootObject, accessControlContext);
+        RefPtr<JSC::Bindings::JavaInstance> jinstance = JSC::Bindings::JavaInstance::create(val, rootObject, accessControlContext);
         return toRef(jinstance->createRuntimeObject(exec));
     }
 }
@@ -193,7 +196,7 @@ jstring JSValue_to_Java_String(JSValueRef value, JNIEnv* env, JSContextRef ctx)
 
 jobject JSValue_to_Java_Object(
     JSValueRef value,
-    JNIEnv* env,
+    JNIEnv*,
     JSContextRef ctx,
     JSC::Bindings::RootObject* rootObject)
 {
@@ -245,7 +248,7 @@ jobject executeScript(
 }
 
 
-PassRefPtr<JSC::Bindings::RootObject> checkJSPeer(
+RefPtr<JSC::Bindings::RootObject> checkJSPeer(
     jlong peer,
     jint peer_type,
     JSObjectRef &object,
@@ -271,10 +274,14 @@ PassRefPtr<JSC::Bindings::RootObject> checkJSPeer(
                 ? static_cast<WebCore::DOMWindow*>(jlong_to_ptr(peer))->document()->frame()
                 : static_cast<WebCore::Node*>(jlong_to_ptr(peer))->document().frame();
 
-            rootObject = frame->script().createRootObject(frame).leakRef();
+            if (!frame) {
+                return rootObject;
+            }
+            rootObject = &(frame->script().createRootObject(frame).leakRef());
             if (rootObject) {
                 context = WebCore::getGlobalContext(&frame->script());
                 JSC::ExecState* exec = toJS(context);
+                JSC::JSLockHolder lock(exec);
 
                 object = const_cast<JSObjectRef>(toRef(exec,
                     (peer_type == com_sun_webkit_dom_JSObject_JS_DOM_WINDOW_OBJECT)
@@ -294,7 +301,7 @@ PassRefPtr<JSC::Bindings::RootObject> checkJSPeer(
 extern "C" {
 
 JNIEXPORT jobject JNICALL Java_com_sun_webkit_dom_JSObject_evalImpl
-(JNIEnv *env, jclass clas, jlong peer, jint peer_type, jstring str)
+(JNIEnv *env, jclass, jlong peer, jint peer_type, jstring str)
 {
     if (str == NULL) {
         throwNullPointerException(env);
@@ -303,12 +310,16 @@ JNIEXPORT jobject JNICALL Java_com_sun_webkit_dom_JSObject_evalImpl
     JSObjectRef object;
     JSContextRef ctx;
     RefPtr<JSC::Bindings::RootObject> rootObject(checkJSPeer(peer, peer_type, object, ctx));
+    if (rootObject.get() == NULL) {
+        throwNullPointerException(env);
+        return NULL;
+    }
 
     return WebCore::executeScript(env, object, ctx, rootObject.get(), str);
 }
 
 JNIEXPORT jobject JNICALL Java_com_sun_webkit_dom_JSObject_getMemberImpl
-(JNIEnv *env, jclass clas, jlong peer, jint peer_type, jstring str)
+(JNIEnv *env, jclass, jlong peer, jint peer_type, jstring str)
 {
     if (str == NULL) {
         throwNullPointerException(env);
@@ -318,6 +329,10 @@ JNIEXPORT jobject JNICALL Java_com_sun_webkit_dom_JSObject_getMemberImpl
     JSContextRef ctx;
     RefPtr<JSC::Bindings::RootObject> rootObject(checkJSPeer(peer, peer_type, object, ctx));
 
+    if (rootObject.get() == NULL) {
+        throwNullPointerException(env);
+        return NULL;
+    }
     JSStringRef name = WebCore::asJSStringRef(env, str);
     JSValueRef value = JSObjectGetProperty(ctx, object, name, NULL);
     JSStringRelease(name);
@@ -325,7 +340,7 @@ JNIEXPORT jobject JNICALL Java_com_sun_webkit_dom_JSObject_getMemberImpl
 }
 
 JNIEXPORT void JNICALL Java_com_sun_webkit_dom_JSObject_setMemberImpl
-(JNIEnv *env, jclass clas, jlong peer, jint peer_type, jstring str, jobject value, jobject accessControlContext)
+(JNIEnv *env, jclass, jlong peer, jint peer_type, jstring str, jobject value, jobject accessControlContext)
 {
     if (str == NULL) {
         throwNullPointerException(env);
@@ -334,7 +349,10 @@ JNIEXPORT void JNICALL Java_com_sun_webkit_dom_JSObject_setMemberImpl
     JSObjectRef object;
     JSContextRef ctx;
     RefPtr<JSC::Bindings::RootObject> rootObject(checkJSPeer(peer, peer_type, object, ctx));
-
+    if (rootObject.get() == NULL) {
+        throwNullPointerException(env);
+        return;
+    }
     JSStringRef name = WebCore::asJSStringRef(env, str);
     JSValueRef jsvalue = WebCore::Java_Object_to_JSValue(env, ctx, rootObject.get(), value, accessControlContext);
     JSPropertyAttributes attributes = 0;
@@ -346,7 +364,7 @@ JNIEXPORT void JNICALL Java_com_sun_webkit_dom_JSObject_setMemberImpl
 }
 
 JNIEXPORT void JNICALL Java_com_sun_webkit_dom_JSObject_removeMemberImpl
-(JNIEnv *env, jclass clas, jlong peer, jint peer_type, jstring str)
+(JNIEnv *env, jclass, jlong peer, jint peer_type, jstring str)
 {
     if (str == NULL) {
         throwNullPointerException(env);
@@ -354,7 +372,10 @@ JNIEXPORT void JNICALL Java_com_sun_webkit_dom_JSObject_removeMemberImpl
     }
     JSObjectRef object;
     JSContextRef ctx;
-    checkJSPeer(peer, peer_type, object, ctx);
+    if (checkJSPeer(peer, peer_type, object, ctx) == NULL) {
+        throwNullPointerException(env);
+        return;
+    }
 
     JSStringRef name = WebCore::asJSStringRef(env, str);
     JSObjectDeleteProperty(ctx, object, name, NULL);
@@ -362,36 +383,46 @@ JNIEXPORT void JNICALL Java_com_sun_webkit_dom_JSObject_removeMemberImpl
 }
 
 JNIEXPORT jobject JNICALL Java_com_sun_webkit_dom_JSObject_getSlotImpl
-  (JNIEnv *env, jclass clas, jlong peer, jint peer_type, jint index)
+  (JNIEnv *env, jclass, jlong peer, jint peer_type, jint index)
 {
     JSObjectRef object;
     JSContextRef ctx;
     RefPtr<JSC::Bindings::RootObject> rootObject(checkJSPeer(peer, peer_type, object, ctx));
+    if (rootObject.get() == NULL) {
+        throwNullPointerException(env);
+        return NULL;
+    }
 
     JSValueRef value = JSObjectGetPropertyAtIndex(ctx, object, index, NULL);
     return WebCore::JSValue_to_Java_Object(value, env, ctx, rootObject.get());
 }
 
 JNIEXPORT void JNICALL Java_com_sun_webkit_dom_JSObject_setSlotImpl
-(JNIEnv *env, jclass clas, jlong peer, jint peer_type, jint index, jobject value, jobject accessControlContext)
+(JNIEnv *env, jclass, jlong peer, jint peer_type, jint index, jobject value, jobject accessControlContext)
 {
     JSObjectRef object;
     JSContextRef ctx;
     RefPtr<JSC::Bindings::RootObject> rootObject(checkJSPeer(peer, peer_type, object, ctx));
+    if (rootObject.get() == NULL) {
+        throwNullPointerException(env);
+        return;
+    }
 
     JSValueRef jsvalue = WebCore::Java_Object_to_JSValue(env, ctx, rootObject.get(), value, accessControlContext);
-    JSPropertyAttributes attributes = 0;
     JSObjectSetPropertyAtIndex(ctx, object, (unsigned) index, jsvalue, NULL);
 }
 
 JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_JSObject_toStringImpl
-(JNIEnv *env, jclass clas, jlong peer, jint peer_type)
+(JNIEnv *env, jclass, jlong peer, jint peer_type)
 {
     JSObjectRef object;
     JSContextRef ctx;
-    checkJSPeer(peer, peer_type, object, ctx);
+    if (checkJSPeer(peer, peer_type, object, ctx) == NULL) {
+        return nullptr;
+    }
 
     JSC::ExecState* exec = toJS(ctx);
+    JSC::JSLockHolder lock(exec);
 
     return toJS(object)->toString(exec)->value(exec)
         .toJavaString(env).releaseLocal();
@@ -407,7 +438,7 @@ JNIEXPORT jobject JNICALL Java_com_sun_webkit_dom_JSObject_callImpl
     JSObjectRef object;
     JSContextRef ctx;
     RefPtr<JSC::Bindings::RootObject> rootObject(checkJSPeer(peer, peer_type, object, ctx));
-    if (!rootObject || !ctx) {
+    if (!rootObject || !rootObject.get() || !ctx) {
         env->ThrowNew(getJSExceptionClass(env), "Invalid function reference");
         return NULL;
     }
@@ -422,7 +453,7 @@ JNIEXPORT jobject JNICALL Java_com_sun_webkit_dom_JSObject_callImpl
         return JSC::Bindings::convertUndefinedToJObject();
     size_t argumentCount = env->GetArrayLength(args);
     JSValueRef *arguments = new JSValueRef[argumentCount];
-    for (int i = 0;  i < argumentCount; i++) {
+    for (size_t i = 0;  i < argumentCount; i++) {
       JLObject jarg(env->GetObjectArrayElement(args, i));
         arguments[i] = WebCore::Java_Object_to_JSValue(env, ctx, rootObject.get(), jarg, accessControlContext);
     }
@@ -439,12 +470,12 @@ JNIEXPORT jobject JNICALL Java_com_sun_webkit_dom_JSObject_callImpl
 }
 
 JNIEXPORT void JNICALL Java_com_sun_webkit_dom_JSObject_unprotectImpl
-(JNIEnv *env, jclass clas, jlong peer, jint peer_type)
+(JNIEnv*, jclass, jlong peer, jint peer_type)
 {
     JSObjectRef object;
     JSContextRef ctx;
     RefPtr<JSC::Bindings::RootObject> rootObject(checkJSPeer(peer, peer_type, object, ctx));
-    if (!rootObject || !peer || !ctx) {
+    if (!rootObject || !rootObject.get() || !peer || !ctx) {
         return;
     }
 

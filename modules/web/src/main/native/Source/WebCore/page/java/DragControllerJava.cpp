@@ -13,7 +13,6 @@
 namespace WebCore {
 
     // FIXME: constants are from gtk port
-    const int DragController::LinkDragBorderInset = 2;
     const int DragController::MaxOriginalImageArea = 1500 * 1500;
     const int DragController::DragIconRightInset = 7;
     const int DragController::DragIconBottomInset = 3;
@@ -32,7 +31,7 @@ namespace WebCore {
     }
 
     //uta: need to be fixed with usage of DragData pointer
-    bool DragController::isCopyKeyDown(const DragData& dragData)
+    bool DragController::isCopyKeyDown(const DragData&)
     {
         //State has not direct connection with keyboard state.
         //Now it is imported from Java (user drag action).

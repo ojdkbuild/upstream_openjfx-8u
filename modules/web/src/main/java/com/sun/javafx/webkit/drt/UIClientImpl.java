@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,17 @@ final class UIClientImpl implements UIClient {
         return defaultValue;
     }
 
+    @Override
+    public boolean canRunBeforeUnloadConfirmPanel() {
+        return true;
+    }
+
+    @Override
+    public boolean runBeforeUnloadConfirmPanel(String message) {
+        DumpRenderTree.out.printf("CONFIRM NAVIGATION: %s\n", message);
+        return !DumpRenderTree.drt.shouldStayOnPageAfterHandlingBeforeUnload();
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -179,7 +190,7 @@ final class UIClientImpl implements UIClient {
      */
     @Override
     public void startDrag(WCImage frame, int imageOffsetX, int imageOffsetY,
-            int eventPosX, int eventPosY, String[] mimeTypes, Object[] values)
+            int eventPosX, int eventPosY, String[] mimeTypes, Object[] values, boolean isImageSource)
     {
         throw new UnsupportedOperationException("Not supported yet");
     }

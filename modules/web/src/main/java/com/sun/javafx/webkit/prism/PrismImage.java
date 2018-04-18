@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ abstract class PrismImage extends WCImage {
     }
 
     @Override
-    protected final String toDataURL(String mimeType) {
+    protected final byte[] toData(String mimeType) {
         Object image = UIClientImpl.toBufferedImage(javafx.scene.image.Image.impl_fromPlatformImage(getImage()));
         if (image instanceof BufferedImage) {
             Iterator<ImageWriter> it = ImageIO.getImageWritersByMIMEType(mimeType);
@@ -80,11 +80,20 @@ abstract class PrismImage extends WCImage {
                 finally {
                     writer.dispose();
                 }
-                StringBuilder sb = new StringBuilder();
-                sb.append("data:").append(mimeType).append(";base64,");
-                sb.append(Base64.getMimeEncoder().encodeToString(output.toByteArray()));
-                return sb.toString();
+                return output.toByteArray();
             }
+        }
+        return null;
+    }
+
+    @Override
+    protected final String toDataURL(String mimeType) {
+        final byte[] data = toData(mimeType);
+        if (data != null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("data:").append(mimeType).append(";base64,");
+            sb.append(Base64.getMimeEncoder().encodeToString(data));
+            return sb.toString();
         }
         return null;
     }

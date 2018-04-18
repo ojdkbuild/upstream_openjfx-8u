@@ -1,6 +1,28 @@
 /*
  * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
+
 #include "config.h"
 
 #include "ChromeClientJava.h"
@@ -79,6 +101,9 @@ static jmethodID promptMID = NULL;
 
 static jmethodID addMessageToConsoleMID = NULL; // WebPage
 
+static jmethodID canRunBeforeUnloadConfirmPanelMID = NULL; // WebPage
+static jmethodID runBeforeUnloadConfirmPanelMID = NULL; // WebPage
+
 static jmethodID screenToWindowMID = NULL; // WebPage
 static jmethodID windowToScreenMID = NULL; // WebPage
 
@@ -135,6 +160,17 @@ static void initRefs(JNIEnv* env)
                 "fwkAddMessageToConsole",
                 "(Ljava/lang/String;ILjava/lang/String;)V");
         ASSERT(addMessageToConsoleMID);
+
+
+        canRunBeforeUnloadConfirmPanelMID = env->GetMethodID(getWebPageCls(),
+                "fwkCanRunBeforeUnloadConfirmPanel",
+                "()Z");
+        ASSERT(canRunBeforeUnloadConfirmPanelMID);
+
+        runBeforeUnloadConfirmPanelMID = env->GetMethodID(getWebPageCls(),
+                "fwkRunBeforeUnloadConfirmPanel",
+                "(Ljava/lang/String;)Z");
+        ASSERT(runBeforeUnloadConfirmPanelMID);
 
         screenToWindowMID = env->GetMethodID(getWebPageCls(), "fwkScreenToWindow",
             "(Lcom/sun/webkit/graphics/WCPoint;)Lcom/sun/webkit/graphics/WCPoint;");
@@ -289,7 +325,7 @@ Page* ChromeClientJava::createWindow(
     Frame&,
     const FrameLoadRequest& req,
     const WindowFeatures& features,
-    const NavigationAction&)
+    const NavigationAction& na)
 {
     JNIEnv* env = WebCore_GetJavaEnv();
     initRefs(env);
@@ -309,7 +345,8 @@ Page* ChromeClientJava::createWindow(
 
     Page* p = WebPage::pageFromJObject(newWebPage);
     if (!req.isEmpty()) {
-        p->mainFrame().loader().load(req);
+        p->mainFrame().loader().load(
+            FrameLoadRequest(p->mainFrame(), ResourceRequest(na.url()), req.shouldOpenExternalURLsPolicy()));
     }
 
     return p;
@@ -513,8 +550,22 @@ void ChromeClientJava::loadIconForFiles(const Vector<String>& filenames, FileIco
 
 bool ChromeClientJava::canRunBeforeUnloadConfirmPanel()
 {
-    notImplemented();
-    return false;
+    JNIEnv* env = WebCore_GetJavaEnv();
+    initRefs(env);
+
+    auto result = env->CallBooleanMethod(m_webPage, canRunBeforeUnloadConfirmPanelMID);
+    CheckAndClearException(env);
+    return result;
+}
+
+bool ChromeClientJava::runBeforeUnloadConfirmPanel(const String& message, Frame&)
+{
+    JNIEnv* env = WebCore_GetJavaEnv();
+    initRefs(env);
+
+    auto result = env->CallBooleanMethod(m_webPage, runBeforeUnloadConfirmPanelMID, (jstring)message.toJavaString(env));
+    CheckAndClearException(env);
+    return result;
 }
 
 void ChromeClientJava::addMessageToConsole(MessageSource, MessageLevel, const String& message,
@@ -528,12 +579,6 @@ void ChromeClientJava::addMessageToConsole(MessageSource, MessageLevel, const St
             (jint)lineNumber,
             (jstring)sourceID.toJavaString(env));
     CheckAndClearException(env);
-}
-
-bool ChromeClientJava::runBeforeUnloadConfirmPanel(const String&, Frame&)
-{
-    notImplemented();
-    return false;
 }
 
 KeyboardUIMode ChromeClientJava::keyboardUIMode()
@@ -739,5 +784,10 @@ RefPtr<SearchPopupMenu> ChromeClientJava::createSearchPopupMenu(PopupMenuClient&
 }
 
 // End of HostWindow methods
+
+RefPtr<Icon> ChromeClientJava::createIconForFiles(const Vector<String>& filenames)
+{
+    return Icon::createIconForFiles(filenames);
+}
 
 } // namespace WebCore
