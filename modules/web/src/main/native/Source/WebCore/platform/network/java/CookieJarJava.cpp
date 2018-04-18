@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 #include "config.h"
 
@@ -84,13 +84,13 @@ bool cookiesEnabled(const NetworkStorageSession&, const URL&, const URL&)
     return true;
 }
 
-bool getRawCookies(const NetworkStorageSession&, const URL&, const URL& url, Vector<Cookie>& rawCookies)
+bool getRawCookies(const NetworkStorageSession&, const URL&, const URL&, Vector<Cookie>&)
 {
     notImplemented();
     return false;
 }
 
-void deleteCookie(const NetworkStorageSession&, const URL& url, const String& name)
+void deleteCookie(const NetworkStorageSession&, const URL&, const String&)
 {
     notImplemented();
 }

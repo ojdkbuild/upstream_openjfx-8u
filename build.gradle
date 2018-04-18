@@ -2471,9 +2471,7 @@ project(":web") {
             exec {
                 commandLine("$JAVAH", "-J-Djava.ext.dirs=", "-d", "$dest",
                             "-classpath", "${classpath.asPath}");
-                args("java.lang.Character",
-                     "java.net.IDN",
-                     "com.sun.webkit.ContextMenu",
+                args("com.sun.webkit.ContextMenu",
                      "com.sun.webkit.ContextMenuItem",
                      "com.sun.webkit.CursorManager",
                      "com.sun.webkit.PageCache",
@@ -2499,6 +2497,7 @@ project(":web") {
                      "com.sun.webkit.WCFrameView",
                      "com.sun.webkit.WCPasteboard",
                      "com.sun.webkit.WCPluginWidget",
+                     "com.sun.webkit.dom.CharacterDataImpl",
                      "com.sun.webkit.dom.JSObject",
                      "com.sun.webkit.network.SocketStreamHandle",
                      "com.sun.webkit.network.URLLoader",
@@ -2518,12 +2517,15 @@ project(":web") {
         def webkitOutputDir = cygpath("$buildDir/${t.name}")
         def webkitConfig = IS_DEBUG_NATIVE ? "Debug" : "Release"
 
+        File nativeBuildDir = new File("${webkitOutputDir}")
+        nativeBuildDir.mkdirs()
+
         def compileNativeTask = task("compileNative${t.capital}", dependsOn: generateHeaders) << {
             println "Building Webkit configuration /$webkitConfig/ into $webkitOutputDir"
 
             exec {
-                workingDir("$projectDir/src/main/native")
-                commandLine("perl", "Tools/Scripts/set-webkit-configuration", "--$webkitConfig")
+                workingDir("$webkitOutputDir")
+                commandLine("perl", "$projectDir/src/main/native/Tools/Scripts/set-webkit-configuration", "--$webkitConfig")
                 environment(["WEBKIT_OUTPUTDIR" : webkitOutputDir])
             }
 
@@ -2545,11 +2547,13 @@ project(":web") {
                      */
                     // args("--icu-unicode")
                 } else if (t.name == "mac") {
-                    // JFX WebKit needs atleast 10.9 OSX
-                    cmakeArgs = "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 -DCMAKE_OSX_SYSROOT=$MACOSX_SDK_PATH"
+                    cmakeArgs = "-DCMAKE_OSX_DEPLOYMENT_TARGET=$MACOSX_MIN_VERSION -DCMAKE_OSX_SYSROOT=$MACOSX_SDK_PATH"
                 } else if (t.name == "linux") {
-                    if (!IS_64) {
-                        cmakeArgs = "-DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32"
+                    cmakeArgs = "-DCMAKE_SYSTEM_NAME=Linux"
+                    if (IS_64) {
+                        cmakeArgs = "$cmakeArgs -DCMAKE_SYSTEM_PROCESSOR=x86_64"
+                    } else {
+                        cmakeArgs = "$cmakeArgs -DCMAKE_SYSTEM_PROCESSOR=i586 -DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32"
                     }
                 } else if (t.name.startsWith("arm")) {
                     fail("ARM target is not supported as of now.")
@@ -2565,6 +2569,7 @@ project(":web") {
                 environment([
                     "JAVA_HOME"       : JDK_HOME,
                     "WEBKIT_OUTPUTDIR" : webkitOutputDir,
+                    "PYTHONDONTWRITEBYTECODE" : "1",
                 ])
 
                 def targetCpuBitDepthSwitch = ""
@@ -2574,7 +2579,7 @@ project(":web") {
                     targetCpuBitDepthSwitch = "--32-bit"
                 }
 
-                commandLine("perl", "Tools/Scripts/build-webkit",
+                commandLine("perl", "$projectDir/src/main/native/Tools/Scripts/build-webkit",
                     "--java", "--icu-unicode", targetCpuBitDepthSwitch,
                     "--cmakeargs=${cmakeArgs}")
             }

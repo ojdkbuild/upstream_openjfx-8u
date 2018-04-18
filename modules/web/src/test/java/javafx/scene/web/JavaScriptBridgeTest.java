@@ -217,7 +217,7 @@ public class JavaScriptBridgeTest extends TestBase {
                 fail("JSException expected but not thrown");
             } catch (Throwable ex) {
                 assertTrue(ex instanceof JSException);
-                assertTrue(ex.toString().indexOf("DOM Exception") > 0);
+                assertTrue(ex.toString().indexOf("NotFoundError") > 0);
             }
         });
     }
@@ -681,6 +681,64 @@ public class JavaScriptBridgeTest extends TestBase {
             executeShouldFail(web, "sb['append(BadClass)'](123)");
             executeShouldFail(web, "sb['append(bad-type)'](123)");
             executeShouldFail(web, "sb['append(char[],,int)'](1, 2)");
+        });
+    }
+
+    // JDK-8187568
+    @Test(expected=NullPointerException.class)
+    public void testcheckJSPeerTostring() {
+        final JSObject doc = (JSObject) executeScript("document");
+        loadContent("<h1></h1>");
+        submit(() -> {
+            getEngine().executeScript(doc.toString());
+        });
+    }
+
+    // JDK-8187568
+    @Test(expected=NullPointerException.class)
+    public void testcheckJSPeerGetMember() {
+        final JSObject doc = (JSObject) executeScript("document");
+        submit(() -> {
+            doc.setMember("beforeload", "oldmember");
+        });
+
+        loadContent("<h1></h1>");
+        submit(() -> {
+            doc.getMember("beforeload");
+        });
+    }
+
+    // JDK-8187568
+    @Test(expected=NullPointerException.class)
+    public void testcheckJSPeerSetMember() {
+        final JSObject doc = (JSObject) executeScript("document");
+        loadContent("<h1></h1>");
+        submit(() -> {
+            doc.setMember("newMember", "newvalue");
+        });
+    }
+
+    // JDK-8187568
+    @Test(expected=NullPointerException.class)
+    public void testcheckJSPeerRemoveMember() {
+        final JSObject doc = (JSObject) executeScript("document");
+        submit(() -> {
+            doc.setMember("oldMember", "oldmember");
+        });
+        loadContent("<h1></h1>");
+        submit(() -> {
+            doc.removeMember("oldMember");
+        });
+    }
+
+    // JDK-8187568
+    @Test(expected=NullPointerException.class)
+    public void testcheckJSPeerEval() {
+        final JSObject doc = (JSObject) executeScript("document");
+        executeScript("var x = 10;");
+        loadContent("<h1></h1>");
+        submit(() -> {
+            doc.eval("x");
         });
     }
 }

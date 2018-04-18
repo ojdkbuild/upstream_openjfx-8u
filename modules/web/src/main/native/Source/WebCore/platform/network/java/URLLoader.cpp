@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  */
 #include "config.h"
 
@@ -281,7 +281,7 @@ void URLLoader::AsynchronousTarget::didFinishLoading()
 {
     ResourceHandleClient* client = m_handle->client();
     if (client) {
-        client->didFinishLoading(m_handle, 0.0);
+        client->didFinishLoading(m_handle);
     }
 }
 

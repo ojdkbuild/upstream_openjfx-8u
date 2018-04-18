@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1379,7 +1379,6 @@ final public class WebEngine {
             if (frame != getMainFrame()) {
                 return;
             }
-
             switch (state) {
                 case PAGE_STARTED:
                     message.set("Loading " + url);
@@ -1390,6 +1389,10 @@ final public class WebEngine {
                     break;
                 case PAGE_REDIRECTED:
                     message.set("Loading " + url);
+                    updateLocation(url);
+                    break;
+                case PAGE_REPLACED:
+                    message.set("Replaced " + url);
                     updateLocation(url);
                     break;
                 case PAGE_FINISHED:

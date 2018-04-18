@@ -2262,18 +2262,17 @@ public final class WebPage {
           Object image,
           int imageOffsetX, int imageOffsetY,
           int eventPosX, int eventPosY,
-          String[] mimeTypes,
-          Object[] values)
+          String[] mimeTypes, Object[] values,
+          boolean isImageSource)
     {
         log.log(Level.FINER, "Start drag: ");
-
         if (uiClient != null) {
             uiClient.startDrag(
                   WCImage.getImage(image),
                   imageOffsetX, imageOffsetY,
                   eventPosX, eventPosY,
-                  mimeTypes,
-                  values);
+                  mimeTypes, values,
+                  isImageSource);
         }
     }
 
@@ -2320,6 +2319,24 @@ public final class WebPage {
             return uiClient.prompt(text, defaultValue);
         }
         return null;
+    }
+
+    private boolean fwkCanRunBeforeUnloadConfirmPanel() {
+        log.log(Level.FINE, "JavaScript canRunBeforeUnloadConfirmPanel()");
+
+        if (uiClient != null) {
+            return uiClient.canRunBeforeUnloadConfirmPanel();
+        }
+        return false;
+    }
+
+    private boolean fwkRunBeforeUnloadConfirmPanel(String message) {
+        log.log(Level.FINE, "JavaScript runBeforeUnloadConfirmPanel(): message = " + message);
+
+        if (uiClient != null) {
+            return uiClient.runBeforeUnloadConfirmPanel(message);
+        }
+        return false;
     }
 
     private void fwkAddMessageToConsole(String message, int lineNumber,

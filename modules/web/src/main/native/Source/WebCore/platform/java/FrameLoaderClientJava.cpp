@@ -1,6 +1,28 @@
 /*
  * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
+
 #include "config.h"
 
 #include "FrameLoaderClientJava.h"
@@ -181,6 +203,15 @@ FrameLoaderClientJava::FrameLoaderClientJava(const JLObject &webPage)
 {
 }
 
+void FrameLoaderClientJava::dispatchDidNavigateWithinPage()
+{
+    postLoadEvent(frame(),
+                  com_sun_webkit_LoadListenerClient_PAGE_REPLACED,
+                  frame()->document()->url(),
+                  frame()->loader().documentLoader()->responseMIMEType(),
+                  1.0 /* progress */);
+}
+
 void FrameLoaderClientJava::frameLoaderDestroyed()
 {
     WC_GETJAVAENV_CHKRET(env);
@@ -305,7 +336,7 @@ void FrameLoaderClientJava::transitionToCommittedForNewPage()
         bkColor = fv->baseBackgroundColor();
         isTransparent = fv->isTransparent();
     }
-    frame()->createView(IntRect(pageRect).size(), bkColor, isTransparent);
+    frame()->createView(IntRect(pageRect).size(), bkColor, isTransparent, /* fixedLayoutSize */ { }, /* fixedVisibleContentRect */ { });
 }
 
 WTF::Ref<WebCore::DocumentLoader> FrameLoaderClientJava::createDocumentLoader(const WebCore::ResourceRequest& request, const SubstituteData& substituteData)
@@ -313,14 +344,14 @@ WTF::Ref<WebCore::DocumentLoader> FrameLoaderClientJava::createDocumentLoader(co
     return DocumentLoader::create(request, substituteData);
 }
 
-void FrameLoaderClientJava::dispatchWillSubmitForm(FormState&, FramePolicyFunction policyFunction)
+void FrameLoaderClientJava::dispatchWillSubmitForm(FormState&, WTF::Function<void(void)>&& policyFunction)
 {
     // FIXME: This is surely too simple
     ASSERT(frame() && policyFunction);
     if (!frame() || !policyFunction) {
         return;
     }
-    policyFunction(PolicyUse);
+    policyFunction();
 }
 
 void FrameLoaderClientJava::committedLoad(DocumentLoader* loader, const char* data, int length)
@@ -329,7 +360,7 @@ void FrameLoaderClientJava::committedLoad(DocumentLoader* loader, const char* da
     loader->commitData(data, length);
 }
 
-void FrameLoaderClientJava::dispatchDecidePolicyForResponse(const ResourceResponse& response, const ResourceRequest& request, FramePolicyFunction policyFunction)
+void FrameLoaderClientJava::dispatchDecidePolicyForResponse(const ResourceResponse& response, const ResourceRequest&, FramePolicyFunction&& policyFunction)
 {
     PolicyAction action;
 
@@ -372,7 +403,7 @@ void FrameLoaderClientJava::dispatchDecidePolicyForNewWindowAction(const Navigat
                                                                    const ResourceRequest& req,
                                                                    FormState*,
                                                                    const String&,
-                                                                   FramePolicyFunction policyFunction)
+                                                                   FramePolicyFunction&& policyFunction)
 {
     JNIEnv* env = WebCore_GetJavaEnv();
     initRefs(env);
@@ -395,7 +426,7 @@ void FrameLoaderClientJava::dispatchDecidePolicyForNewWindowAction(const Navigat
 void FrameLoaderClientJava::dispatchDecidePolicyForNavigationAction(const NavigationAction& action,
                                                                     const ResourceRequest& req,
                                                                     FormState*,
-                                                                    FramePolicyFunction policyFunction)
+                                                                    FramePolicyFunction&& policyFunction)
 {
     JNIEnv* env = WebCore_GetJavaEnv();
     initRefs(env);
@@ -554,15 +585,18 @@ void FrameLoaderClientJava::assignIdentifierToInitialRequest(unsigned long, Docu
     notImplemented();
 }
 
-void FrameLoaderClientJava::willReplaceMultipartContent() {
+void FrameLoaderClientJava::willReplaceMultipartContent()
+{
     notImplemented(); // TODO-java: recheck
 }
 
-void FrameLoaderClientJava::didReplaceMultipartContent() {
+void FrameLoaderClientJava::didReplaceMultipartContent()
+{
     notImplemented(); // TODO-java: recheck
 }
 
-void FrameLoaderClientJava::updateCachedDocumentLoader(DocumentLoader&) {
+void FrameLoaderClientJava::updateCachedDocumentLoader(DocumentLoader&)
+{
     notImplemented(); // TODO-java: recheck
 }
 
@@ -782,10 +816,17 @@ Frame* FrameLoaderClientJava::dispatchCreatePage(const NavigationAction& action)
     struct WindowFeatures features {};
     Page* newPage = frame()->page()->chrome().createWindow(
                         *frame(),
-                        FrameLoadRequest(frame()->document()->securityOrigin(), LockHistory::No,
-                                            LockBackForwardList::No, ShouldSendReferrer::MaybeSendReferrer,
-                                            AllowNavigationToInvalidURL::Yes, NewFrameOpenerPolicy::Allow, // TODO-java: check params
-                                            ShouldOpenExternalURLsPolicy::ShouldNotAllow),
+                        FrameLoadRequest(*frame()->document(),
+                                            frame()->document()->securityOrigin(),
+                                            action.resourceRequest(),
+                                            {},
+                                            LockHistory::No,
+                                            LockBackForwardList::No,
+                                            ShouldSendReferrer::MaybeSendReferrer,
+                                            AllowNavigationToInvalidURL::Yes,
+                                            NewFrameOpenerPolicy::Allow, // TODO-java: check params
+                                            action.shouldOpenExternalURLsPolicy(),
+                                            action.initiatedByMainFrame()),
                         features,
                         action);
 
@@ -828,18 +869,29 @@ void FrameLoaderClientJava::forceLayoutForNonHTML() { notImplemented(); }
 void FrameLoaderClientJava::setCopiesOnScroll() { notImplemented(); }
 void FrameLoaderClientJava::detachedFromParent2() { notImplemented(); }
 void FrameLoaderClientJava::detachedFromParent3() { notImplemented(); }
+
+void FrameLoaderClientJava::dispatchDidPushStateWithinPage()
+{
+    dispatchDidNavigateWithinPage();
+}
+
+void FrameLoaderClientJava::dispatchDidReplaceStateWithinPage()
+{
+    dispatchDidNavigateWithinPage();
+}
+
 void FrameLoaderClientJava::dispatchDidDispatchOnloadEvents() {notImplemented(); }
-void FrameLoaderClientJava::dispatchDidPushStateWithinPage() { notImplemented(); }
-void FrameLoaderClientJava::dispatchDidReplaceStateWithinPage() { notImplemented(); }
 void FrameLoaderClientJava::dispatchDidPopStateWithinPage() { notImplemented(); }
 void FrameLoaderClientJava::dispatchDidReceiveServerRedirectForProvisionalLoad() { notImplemented(); }
 void FrameLoaderClientJava::dispatchDidCancelClientRedirect() { notImplemented(); }
 void FrameLoaderClientJava::dispatchDidChangeLocationWithinPage() { notImplemented(); }
 void FrameLoaderClientJava::dispatchWillClose() { notImplemented(); }
-void FrameLoaderClientJava::dispatchDidCommitLoad(std::optional<HasInsecureContent>) {
+void FrameLoaderClientJava::dispatchDidCommitLoad(std::optional<HasInsecureContent>)
+{
     // TODO: Look at GTK version
     notImplemented();
 }
+
 void FrameLoaderClientJava::dispatchShow() { notImplemented(); }
 void FrameLoaderClientJava::cancelPolicyCheck() { notImplemented(); }
 void FrameLoaderClientJava::revertToProvisionalState(DocumentLoader*) { notImplemented(); }
@@ -887,29 +939,35 @@ bool FrameLoaderClientJava::canShowMIMETypeAsHTML(const String&) const
 }
 
 
-bool FrameLoaderClientJava::representationExistsForURLScheme(const String&) const {
+bool FrameLoaderClientJava::representationExistsForURLScheme(const String&) const
+{
     notImplemented();
     return false;
 }
 
-String FrameLoaderClientJava::generatedMIMETypeForURLScheme(const String&) const {
+String FrameLoaderClientJava::generatedMIMETypeForURLScheme(const String&) const
+{
     notImplemented();
     return String();
 }
 
-void FrameLoaderClientJava::provisionalLoadStarted() {
+void FrameLoaderClientJava::provisionalLoadStarted()
+{
     notImplemented();
 }
 
-void FrameLoaderClientJava::didFinishLoad() {
+void FrameLoaderClientJava::didFinishLoad()
+{
     notImplemented();
 }
 
-void FrameLoaderClientJava::prepareForDataSourceReplacement() {
+void FrameLoaderClientJava::prepareForDataSourceReplacement()
+{
     notImplemented();
 }
 
-void FrameLoaderClientJava::setTitle(const StringWithDirection&, const URL&) {
+void FrameLoaderClientJava::setTitle(const StringWithDirection&, const URL&)
+{
     notImplemented();
 }
 
@@ -970,26 +1028,32 @@ ResourceError FrameLoaderClientJava::pluginWillHandleLoadError(const ResourceRes
     return ResourceError("Error", WebKitErrorPluginWillHandleLoad, response.url(), "Loading is handled by the media engine");
 }
 
-bool FrameLoaderClientJava::shouldFallBack(const ResourceError& error) {
+bool FrameLoaderClientJava::shouldFallBack(const ResourceError& error)
+{
     //Font fallback supported by Java Fonts internaly
     return !(error.isCancellation() || (error.errorCode() == WebKitErrorFrameLoadInterruptedByPolicyChange));
 }
 
-bool FrameLoaderClientJava::canCachePage() const {
+bool FrameLoaderClientJava::canCachePage() const
+{
     return true;
 }
 
-void FrameLoaderClientJava::didSaveToPageCache() {
+void FrameLoaderClientJava::didSaveToPageCache()
+{
 }
 
-void FrameLoaderClientJava::didRestoreFromPageCache() {
+void FrameLoaderClientJava::didRestoreFromPageCache()
+{
 }
 
-void FrameLoaderClientJava::dispatchUnableToImplementPolicy(const ResourceError&) {
+void FrameLoaderClientJava::dispatchUnableToImplementPolicy(const ResourceError&)
+{
     notImplemented();
 }
 
-void FrameLoaderClientJava::dispatchDidBecomeFrameset(bool) {
+void FrameLoaderClientJava::dispatchDidBecomeFrameset(bool)
+{
    notImplemented();
 }
 
@@ -1004,15 +1068,18 @@ void FrameLoaderClientJava::setMainDocumentError(
     notImplemented();
 }
 
-void FrameLoaderClientJava::startDownload(const ResourceRequest&, const String&) {
+void FrameLoaderClientJava::startDownload(const ResourceRequest&, const String&)
+{
     notImplemented();
 }
 
-void FrameLoaderClientJava::updateGlobalHistory() {
+void FrameLoaderClientJava::updateGlobalHistory()
+{
     notImplemented();
 }
 
-void FrameLoaderClientJava::updateGlobalHistoryRedirectLinks() {
+void FrameLoaderClientJava::updateGlobalHistoryRedirectLinks()
+{
     notImplemented();
 }
 
@@ -1035,7 +1102,8 @@ void FrameLoaderClientJava::dispatchDidClearWindowObjectInWorld(
     CheckAndClearException(env);
 }
 
-void FrameLoaderClientJava::registerForIconNotification(bool) {
+void FrameLoaderClientJava::registerForIconNotification()
+{
     //notImplemented();
 }
 
@@ -1044,7 +1112,8 @@ void FrameLoaderClientJava::convertMainResourceLoadToDownload(DocumentLoader*, S
     //notImplemented();
 }
 
-Ref<FrameNetworkingContext> FrameLoaderClientJava::createNetworkingContext() {
+Ref<FrameNetworkingContext> FrameLoaderClientJava::createNetworkingContext()
+{
     return FrameNetworkingContextJava::create(frame());
 }
 
