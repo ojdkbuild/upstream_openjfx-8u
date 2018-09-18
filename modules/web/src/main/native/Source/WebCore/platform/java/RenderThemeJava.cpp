@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,6 @@
 
 namespace WebCore {
 
-static RefPtr<RQRef> s_jTheme;
-
-
 RenderTheme& RenderTheme::singleton()
 {
     static RenderTheme& sm_defaultInstance = *new RenderThemeJava();
@@ -121,19 +118,8 @@ RefPtr<RQRef> RenderThemeJava::themeForPage(JLObject page)
     return RQRef::create(getJRenderTheme(page));
 }
 
-void RenderThemeJava::setTheme(RefPtr<RQRef> theme)
-{
-    if (theme) {
-        s_jTheme = theme;
-    } else {
-        static auto jTheme = themeForPage(nullptr);
-        s_jTheme = jTheme;
-    }
-}
-
 RenderThemeJava::RenderThemeJava()
 {
-    setTheme(nullptr);
 }
 
 int RenderThemeJava::createWidgetState(const RenderObject& o)
@@ -176,7 +162,11 @@ bool RenderThemeJava::paintWidget(
         return false;
     }
 
-    ASSERT(s_jTheme);
+    auto jRenderTheme = paintInfo.context().platformContext()->jRenderTheme();
+    if (!jRenderTheme) {
+        return false;
+    }
+
     int state = createWidgetState(object);
     RGBA32 bgColor = object.style().visitedDependentColor(
         widgetIndex == JNI_EXPAND(MENU_LIST_BUTTON)
@@ -188,38 +178,46 @@ bool RenderThemeJava::paintWidget(
 
     WTF::Vector<jbyte> extParams;
     if (JNI_EXPAND(SLIDER) == widgetIndex) {
-        HTMLInputElement& input = downcast<RenderSlider>(object).element(); //XXX: recheck
+        HTMLInputElement& input = downcast<RenderSlider>(object).element();
 
-        extParams.grow(sizeof(jint) + 3*sizeof(jfloat));
+        extParams.grow(sizeof(jint) + 3 * sizeof(jfloat));
         jbyte *data = extParams.data();
-        *(jint *)data = jint((object.style().appearance() == SliderHorizontalPart)
+        auto isVertical = jint((object.style().appearance() == SliderHorizontalPart)
             ? 0
             : 1);
+        memcpy(data, &isVertical, sizeof(isVertical));
         data += sizeof(jint);
 
-        *(jfloat *)data = jfloat(input.maximum());
+        auto maximum = jfloat(input.maximum());
+        memcpy(data, &maximum, sizeof(maximum));
         data += sizeof(jfloat);
 
-        *(jfloat *)data = jfloat(input.minimum());
+        auto minimum = jfloat(input.minimum());
+        memcpy(data, &minimum, sizeof(minimum));
         data += sizeof(jfloat);
 
-        *(jfloat *)data = jfloat(input.valueAsNumber());
+        auto valueAsNumber = jfloat(input.valueAsNumber());
+        memcpy(data, &valueAsNumber, sizeof(valueAsNumber));
     } else if (JNI_EXPAND(PROGRESS_BAR) == widgetIndex) {
 #if ENABLE(PROGRESS_ELEMENT)
         RenderProgress& renderProgress = downcast<RenderProgress>(object);
 
         extParams.grow(sizeof(jint) + 3*sizeof(jfloat));
         jbyte *data = extParams.data();
-        *(jint *)data = jint(renderProgress.isDeterminate() ? 1 : 0);
+        auto isDeterminate = jint(renderProgress.isDeterminate() ? 1 : 0);
+        memcpy(data, &isDeterminate, sizeof(isDeterminate));
         data += sizeof(jint);
 
-        *(jfloat *)data = jfloat(renderProgress.position());
+        auto position = jfloat(renderProgress.position());
+        memcpy(data, &position, sizeof(position));
         data += sizeof(jfloat);
 
-        *(jfloat *)data = jfloat(renderProgress.animationProgress());
+        auto animationProgress = jfloat(renderProgress.animationProgress());
+        memcpy(data, &animationProgress, sizeof(animationProgress));
         data += sizeof(jfloat);
 
-        *(jfloat *)data = jfloat(renderProgress.animationStartTime());
+        auto animationStartTime = jfloat(renderProgress.animationStartTime());
+        memcpy(data, &animationStartTime, sizeof(animationStartTime));
 #endif
 #if ENABLE(METER_ELEMENT)
     } else if (JNI_EXPAND(METER) == widgetIndex) {
@@ -238,10 +236,10 @@ bool RenderThemeJava::paintWidget(
 
         extParams.grow(sizeof(jfloat) + sizeof(jint));
         jbyte *data = extParams.data();
-        *(jfloat *)data = value;
+        memcpy(data, &value, sizeof(value));
         data += sizeof(jfloat);
 
-        *(jint *)data = region;
+        memcpy(data, &region, sizeof(region));
 #endif
     }
 
@@ -250,7 +248,7 @@ bool RenderThemeJava::paintWidget(
     ASSERT(mid);
 
     RefPtr<RQRef> widgetRef = RQRef::create(
-        env->CallObjectMethod((jobject)*s_jTheme, mid,
+        env->CallObjectMethod(jobject(*jRenderTheme), mid,
             ptr_to_jlong(&object),
             (jint)widgetIndex,
             (jint)state,
@@ -271,7 +269,7 @@ bool RenderThemeJava::paintWidget(
     // widgetRef will go into rq's inner refs vector.
     paintInfo.context().platformContext()->rq().freeSpace(20)
     << (jint)com_sun_webkit_graphics_GraphicsDecoder_DRAWWIDGET
-    << (jint)*s_jTheme
+    << (jint)*jRenderTheme
     << widgetRef
     << (jint)rect.x() << (jint)rect.y();
 
@@ -339,14 +337,13 @@ void RenderThemeJava::setRadioSize(RenderStyle& style) const
         return;
     }
 
-    ASSERT(s_jTheme);
-
     JNIEnv* env = WebCore_GetJavaEnv();
 
     static jmethodID mid = env->GetMethodID(getJRenderThemeClass(), "getRadioButtonSize", "()I");
     ASSERT(mid);
 
-    int radioRadius = env->CallIntMethod((jobject)*s_jTheme, mid);
+    // Get from default theme object.
+    int radioRadius = env->CallIntMethod((jobject)getJRenderTheme(nullptr), mid);
     CheckAndClearException(env);
 
     if (style.width().isIntrinsicOrAuto()) {
@@ -598,12 +595,12 @@ Color RenderThemeJava::getSelectionColor(int index) const
 {
     JNIEnv* env = WebCore_GetJavaEnv();
     ASSERT(env);
-    ASSERT(s_jTheme);
 
     static jmethodID mid = env->GetMethodID(getJRenderThemeClass(), "getSelectionColor", "(I)I");
     ASSERT(mid);
 
-    jint c = env->CallIntMethod((jobject)*s_jTheme, mid, index);
+    // Get from default theme object.
+    jint c = env->CallIntMethod((jobject)getJRenderTheme(nullptr), mid, index);
     CheckAndClearException(env);
 
     return Color(c);
@@ -660,7 +657,7 @@ bool RenderThemeJava::paintMediaFullscreenButton(const RenderObject& o, const Pa
 
 bool RenderThemeJava::paintMediaPlayButton(const RenderObject& o, const PaintInfo& paintInfo, const IntRect& r)
 {
-    HTMLMediaElement* mediaElement = parentMediaElement(o);
+    auto mediaElement = parentMediaElement(o);
     if (mediaElement == nullptr)
         return false;
 
@@ -675,7 +672,7 @@ bool RenderThemeJava::paintMediaPlayButton(const RenderObject& o, const PaintInf
 
 bool RenderThemeJava::paintMediaMuteButton(const RenderObject&o, const PaintInfo& paintInfo, const IntRect& r)
 {
-    HTMLMediaElement* mediaElement = parentMediaElement(o);
+    auto mediaElement = parentMediaElement(o);
     if (mediaElement == nullptr)
         return false;
 
@@ -694,7 +691,7 @@ bool RenderThemeJava::paintMediaSeekForwardButton(const RenderObject& o, const P
 
 bool RenderThemeJava::paintMediaSliderTrack(const RenderObject&o, const PaintInfo& paintInfo, const IntRect& r)
 {
-    HTMLMediaElement* mediaElement = parentMediaElement(o);
+    auto mediaElement = parentMediaElement(o);
     if (mediaElement == nullptr)
         return false;
 
@@ -734,7 +731,7 @@ bool RenderThemeJava::paintMediaVolumeSliderContainer(const RenderObject& o, con
 
 bool RenderThemeJava::paintMediaVolumeSliderTrack(const RenderObject& o, const PaintInfo& paintInfo, const IntRect& r)
 {
-    HTMLMediaElement* mediaElement = parentMediaElement(o);
+    auto mediaElement = parentMediaElement(o);
     if (mediaElement == nullptr)
         return false;
 

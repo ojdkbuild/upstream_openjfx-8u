@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 
 #include <wtf/java/JavaEnv.h>
 
+namespace EventLoopJava {
+
 static JGClass eventLoopClass;
 static jmethodID cycleMethod;
 
@@ -42,11 +44,13 @@ static void initRefs(JNIEnv* env)
         ASSERT(cycleMethod);
     }
 }
+}
 
 namespace WebCore {
 
 void EventLoop::cycle()
 {
+    using namespace EventLoopJava;
     WC_GETJAVAENV_CHKRET(env);
     initRefs(env);
 

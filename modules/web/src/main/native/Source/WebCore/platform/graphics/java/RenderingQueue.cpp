@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 #include <wtf/java/JavaRef.h>
 #include <wtf/HashMap.h>
+#include <wtf/NeverDestroyed.h>
 
 #include "com_sun_webkit_graphics_WCRenderQueue.h"
 
@@ -40,8 +41,8 @@ typedef HashMap<char*, RefPtr<ByteBuffer> > Addr2ByteBuffer;
 
 static Addr2ByteBuffer& getAddr2ByteBuffer()
 {
-    DEPRECATED_DEFINE_STATIC_LOCAL(Addr2ByteBuffer, container, ());
-    return container;
+    static NeverDestroyed<Addr2ByteBuffer> container;
+    return container.get();
 }
 
 /*static*/

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,11 +173,14 @@ public:
     bool containsFiles() const {
         return containsURL();
     }
-    void asFilenames(Vector<String>& result) const {
+
+    Vector<String> asFilenames() const {
+        Vector<String> result {};
         if(m_url.isEmpty() && !m_filenames.isEmpty())
             result = m_filenames;
         else if(!m_url.isEmpty())
             result.append(m_url.string());
+        return result;
     }
 
     //Plain Text

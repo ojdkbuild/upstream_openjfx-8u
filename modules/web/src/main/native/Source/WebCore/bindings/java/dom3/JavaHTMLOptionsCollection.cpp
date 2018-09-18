@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#undef IMPL
 
 #include "config.h"
 
@@ -49,25 +51,25 @@ extern "C" {
 #define IMPL (static_cast<HTMLOptionsCollection*>(jlong_to_ptr(peer)))
 
 // Attributes
-JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLOptionsCollectionImpl_getSelectedIndexImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLOptionsCollectionImpl_getSelectedIndexImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->selectedIndex();
 }
 
-JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLOptionsCollectionImpl_setSelectedIndexImpl(JNIEnv* env, jclass, jlong peer, jint value)
+JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLOptionsCollectionImpl_setSelectedIndexImpl(JNIEnv*, jclass, jlong peer, jint value)
 {
     WebCore::JSMainThreadNullState state;
     IMPL->setSelectedIndex(value);
 }
 
-JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLOptionsCollectionImpl_getLengthImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLOptionsCollectionImpl_getLengthImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->length();
 }
 
-JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLOptionsCollectionImpl_setLengthImpl(JNIEnv* env, jclass, jlong peer, jint value)
+JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLOptionsCollectionImpl_setLengthImpl(JNIEnv*, jclass, jlong peer, jint value)
 {
     WebCore::JSMainThreadNullState state;
     IMPL->setLength(value);

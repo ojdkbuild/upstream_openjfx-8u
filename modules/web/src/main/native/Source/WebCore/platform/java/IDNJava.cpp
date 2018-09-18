@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include <wtf/java/JavaEnv.h>
 #include "com_sun_webkit_network_URLLoader.h"
 
+namespace IDNJavaInternal {
+
 static JGClass idnClass;
 static jmethodID toASCIIMID;
 
@@ -44,6 +46,7 @@ static void initRefs(JNIEnv* env)
         ASSERT(toASCIIMID);
     }
 }
+}
 
 namespace WebCore {
 
@@ -51,6 +54,7 @@ namespace IDNJava {
 
 String toASCII(const String& hostname)
 {
+    using namespace IDNJavaInternal;
     JNIEnv* env = WebCore_GetJavaEnv();
     initRefs(env);
 

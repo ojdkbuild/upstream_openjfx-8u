@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 
+#undef IMPL
+
 #include "config.h"
 
 #include <wtf/java/JavaEnv.h>
@@ -32,17 +34,17 @@ using namespace WebCore;
 extern "C" {
 
 // Attributes
-JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_EntityImpl_getPublicIdImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_EntityImpl_getPublicIdImpl(JNIEnv*, jclass, jlong)
 {
     return nullptr;
 }
 
-JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_EntityImpl_getSystemIdImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_EntityImpl_getSystemIdImpl(JNIEnv*, jclass, jlong)
 {
     return nullptr;
 }
 
-JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_EntityImpl_getNotationNameImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_EntityImpl_getNotationNameImpl(JNIEnv*, jclass, jlong)
 {
     return nullptr;
 }

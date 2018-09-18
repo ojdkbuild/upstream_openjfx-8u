@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@
 #include "WebCore/testing/js/WebCoreTestSupport.h"
 
 #include <wtf/RefPtr.h>
-#include <API/JavaScript.h>
+#include <JavaScriptCore/JavaScript.h>
+#include <JavaScriptCore/TestRunnerUtils.h>
 
 RefPtr<TestRunner> gTestRunner;
 std::unique_ptr<GCController> gGCController;
@@ -92,9 +93,11 @@ JNIEXPORT void JNICALL Java_com_sun_javafx_webkit_drt_DumpRenderTree_dispose
     (JNIEnv* env, jclass cls)
 {
     ASSERT(gTestRunner);
+    gTestRunner->cleanup();
     gTestRunner = nullptr;
     ASSERT(gGCController);
     gGCController = nullptr;
+    JSC::waitForVMDestruction();
 }
 
 JNIEXPORT jboolean JNICALL Java_com_sun_javafx_webkit_drt_DumpRenderTree_dumpAsText

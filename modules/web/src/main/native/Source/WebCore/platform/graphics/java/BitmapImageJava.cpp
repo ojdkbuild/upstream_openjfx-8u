@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,9 @@ Ref<Image> BitmapImage::createFromName(const char* name)
     ASSERT(midLoadFromResource);
 
     RefPtr<SharedBuffer> dataBuffer(SharedBuffer::create());
-    img->m_source.ensureDecoderAvailable(dataBuffer.get());
+    img->m_source->ensureDecoderAvailable(dataBuffer.get());
     env->CallVoidMethod(
-        img->m_source.m_decoder->nativeDecoder(),
+        static_cast<ImageDecoderJava*>(img->m_source->m_decoder.get())->nativeDecoder(),
         midLoadFromResource,
         (jstring)String(name).toJavaString(env));
     CheckAndClearException(env);
