@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,6 +560,24 @@ String AXMenuListActionVerb()
 String AXSearchFieldCancelButtonText() {
     notImplemented();
     return String(); // UNSUPPORTED: getLocalizedProperty("AXSearchFieldCancelButtonText");
+}
+
+String AXAutoFillStrongPasswordLabel()
+{
+    // return WEB_UI_STRING("strong password auto fill", "Label for the strong password auto fill button inside a text field.");
+    return getLocalizedProperty("AXAutoFillStrongPasswordLabel");
+}
+
+String AXAutoFillStrongConfirmationPasswordLabel()
+{
+    // return WEB_UI_STRING("strong confirmation password auto fill", "Label for the strong confirmation password auto fill button inside a text field.");
+    return getLocalizedProperty("AXAutoFillStrongConfirmationPasswordLabel");
+}
+
+String autoFillStrongPasswordLabel()
+{
+    // return WEB_UI_STRING("strong password", "Label for strong password.");
+    return getLocalizedProperty("autoFillStrongPasswordLabel");
 }
 
 String validationMessageValueMissingText()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 
+#undef IMPL
+
 #include "config.h"
 
 #include <WebCore/HTMLFieldSetElement.h>
@@ -44,13 +46,13 @@ extern "C" {
 
 
 // Attributes
-JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_getDisabledImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_getDisabledImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->hasAttribute(WebCore::HTMLNames::disabledAttr);
 }
 
-JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_setDisabledImpl(JNIEnv* env, jclass, jlong peer, jboolean value)
+JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_setDisabledImpl(JNIEnv*, jclass, jlong peer, jboolean value)
 {
     WebCore::JSMainThreadNullState state;
     IMPL->setBooleanAttribute(WebCore::HTMLNames::disabledAttr, value);
@@ -80,7 +82,7 @@ JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_getTyp
     return JavaReturn<String>(env, IMPL->type());
 }
 
-JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_getWillValidateImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_getWillValidateImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->willValidate();
@@ -94,7 +96,7 @@ JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_getVal
 
 
 // Functions
-JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_checkValidityImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_HTMLFieldSetElementImpl_checkValidityImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->checkValidity();

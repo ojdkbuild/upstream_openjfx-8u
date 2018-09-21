@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#undef IMPL
 
 #include "config.h"
 
@@ -105,13 +107,13 @@ JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_setNameImpl(
     IMPL->setAttributeWithoutSynchronization(WebCore::HTMLNames::nameAttr, String(env, value));
 }
 
-JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_getNoResizeImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_getNoResizeImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->hasAttribute(WebCore::HTMLNames::noresizeAttr);
 }
 
-JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_setNoResizeImpl(JNIEnv* env, jclass, jlong peer, jboolean value)
+JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_setNoResizeImpl(JNIEnv*, jclass, jlong peer, jboolean value)
 {
     WebCore::JSMainThreadNullState state;
     IMPL->setBooleanAttribute(WebCore::HTMLNames::noresizeAttr, value);
@@ -165,13 +167,13 @@ JNIEXPORT void JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_setLocationI
     IMPL->setLocation(String(env, value));
 }
 
-JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_getWidthImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_getWidthImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->width();
 }
 
-JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_getHeightImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLFrameElementImpl_getHeightImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->height();

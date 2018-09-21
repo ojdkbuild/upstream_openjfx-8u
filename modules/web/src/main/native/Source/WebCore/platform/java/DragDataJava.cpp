@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,9 @@ bool DragData::containsFiles() const
     return m_platformDragData->containsFiles();
 }
 
-void DragData::asFilenames(Vector<String>& result) const
+Vector<String> DragData::asFilenames() const
 {
-    return m_platformDragData->asFilenames(result);
+    return m_platformDragData->asFilenames();
 }
 
 bool DragData::containsPlainText() const

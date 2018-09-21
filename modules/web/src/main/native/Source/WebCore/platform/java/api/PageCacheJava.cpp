@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,7 @@
 
 #include "com_sun_webkit_PageCache.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT jint JNICALL Java_com_sun_webkit_PageCache_twkGetCapacity
   (JNIEnv *, jclass)
@@ -44,9 +42,7 @@ JNIEXPORT void JNICALL Java_com_sun_webkit_PageCache_twkSetCapacity
   (JNIEnv *, jclass, jint capacity)
 {
     ASSERT(capacity >= 0);
-    WebCore::PageCache::singleton().setMaxSize(capacity); //XXX rename twkSetCapacity func?
+    WebCore::PageCache::singleton().setMaxSize(capacity);
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,6 @@
  */
 
 #include "config.h"
-
-#if COMPILER(GCC)
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
 
 #include "GraphicsContext.h"
 #include <wtf/java/JavaEnv.h>
@@ -198,7 +194,8 @@ void MediaPlayerPrivate::MediaEngineSupportedTypes(HashSet<String, ASCIICaseInse
 
 MediaPlayer::SupportsType MediaPlayerPrivate::MediaEngineSupportsType(const MediaEngineSupportParameters& parameters)
 {
-    for(auto& codecValue: parameters.type.codecs()) {
+    for (const auto& codecValue: parameters.type.codecs()) {
+        UNUSED_PARAM(codecValue);
         LOG_TRACE2(">>MediaEngineSupportsType, type=%s, codecs=%s\n", parameters.type.raw().utf8().data(), codecValue.utf8().data());
     }
 

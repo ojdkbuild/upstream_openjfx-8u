@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#undef IMPL
 
 #include "config.h"
 
@@ -50,7 +52,7 @@ JNIEXPORT jstring JNICALL Java_com_sun_webkit_dom_AttrImpl_getNameImpl(JNIEnv* e
     return JavaReturn<String>(env, IMPL->name());
 }
 
-JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_AttrImpl_getSpecifiedImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_AttrImpl_getSpecifiedImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->specified();
@@ -74,7 +76,7 @@ JNIEXPORT jlong JNICALL Java_com_sun_webkit_dom_AttrImpl_getOwnerElementImpl(JNI
     return JavaReturn<Element>(env, WTF::getPtr(IMPL->ownerElement()));
 }
 
-JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_AttrImpl_isIdImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jboolean JNICALL Java_com_sun_webkit_dom_AttrImpl_isIdImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->qualifiedName().matches(WebCore::HTMLNames::idAttr);

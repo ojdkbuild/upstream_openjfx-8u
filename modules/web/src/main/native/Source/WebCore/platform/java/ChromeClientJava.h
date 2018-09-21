@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,6 @@ public:
     IntPoint screenToRootView(const IntPoint&) const override;
     IntRect rootViewToScreen(const IntRect&) const override;
     PlatformPageClient platformPageClient() const override;
-    void scrollbarsModeDidChange() const override;
     void setCursor(const Cursor&) override;
     void setCursorHiddenUntilMouseMoves(bool) override;
     // End methods used by HostWindow.
@@ -169,8 +168,6 @@ public:
 
     bool selectItemWritingDirectionIsNatural() override;
     bool selectItemAlignmentFollowsMenuWritingDirection() override;
-    // Checks if there is an opened popup, called by RenderMenuList::showPopup().
-    bool hasOpenedPopup() const override { return false; }
     RefPtr<PopupMenu> createPopupMenu(PopupMenuClient&) const override;
     RefPtr<SearchPopupMenu> createSearchPopupMenu(PopupMenuClient&) const override;
 

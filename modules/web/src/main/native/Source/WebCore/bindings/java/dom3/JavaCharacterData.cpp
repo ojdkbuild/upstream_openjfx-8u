@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#undef IMPL
 
 #include "config.h"
 
@@ -56,7 +58,7 @@ JNIEXPORT void JNICALL Java_com_sun_webkit_dom_CharacterDataImpl_setDataImpl(JNI
     IMPL->setData(String(env, value));
 }
 
-JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_CharacterDataImpl_getLengthImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_CharacterDataImpl_getLengthImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->length();

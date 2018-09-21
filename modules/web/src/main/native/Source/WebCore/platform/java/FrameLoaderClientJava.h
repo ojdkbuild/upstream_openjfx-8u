@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,11 @@ public:
     void makeRepresentation(DocumentLoader*) override;
     void forceLayoutForNonHTML() override;
 
+    std::optional<uint64_t> pageID() const final;
+    std::optional<uint64_t> frameID() const final;
+    PAL::SessionID sessionID() const final;
+
+
     void setCopiesOnScroll() override;
 
     void detachedFromParent2() override;
@@ -74,7 +79,7 @@ public:
     void dispatchDidPopStateWithinPage() override;
     void dispatchDidReceiveServerRedirectForProvisionalLoad() override;
     void dispatchDidCancelClientRedirect() override;
-    void dispatchWillPerformClientRedirect(const URL&, double, double) override;
+    void dispatchWillPerformClientRedirect(const URL&, double, WallTime) override;
     void dispatchDidNavigateWithinPage() override;
     void dispatchDidChangeLocationWithinPage() override;
     void dispatchWillClose() override;
@@ -93,7 +98,7 @@ public:
 
     void dispatchDecidePolicyForResponse(const ResourceResponse&, const ResourceRequest&, FramePolicyFunction&&) override;
     void dispatchDecidePolicyForNewWindowAction(const NavigationAction&, const ResourceRequest&, FormState*, const String& frameName, FramePolicyFunction&&) override;
-    void dispatchDecidePolicyForNavigationAction(const NavigationAction&, const ResourceRequest&, FormState*, FramePolicyFunction&&) override;
+    void dispatchDecidePolicyForNavigationAction(const NavigationAction&, const ResourceRequest&, bool didReceiveRedirectResponse, FormState*, FramePolicyFunction&&) override;
     void cancelPolicyCheck() override;
 
     void dispatchUnableToImplementPolicy(const ResourceError&) override;
@@ -182,7 +187,7 @@ public:
     void transitionToCommittedForNewPage() override;
 
     bool canCachePage() const override;
-    void convertMainResourceLoadToDownload(DocumentLoader*, SessionID, const ResourceRequest&, const ResourceResponse&) override;
+    void convertMainResourceLoadToDownload(DocumentLoader*, PAL::SessionID, const ResourceRequest&, const ResourceResponse&) override;
 
     void didSaveToPageCache() override;
     void didRestoreFromPageCache() override;

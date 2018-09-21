@@ -1,11 +1,10 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 #pragma once
 
 #include "ScriptController.h"
 #include "JNIUtility.h"
-#include <JavaScriptCore/JSValue.h>
 #include <JavaScriptCore/JSObjectRef.h>
 
 

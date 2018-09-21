@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#undef IMPL
 
 #include "config.h"
 
@@ -46,13 +48,13 @@ extern "C" {
 
 
 // Attributes
-JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLTableRowElementImpl_getRowIndexImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLTableRowElementImpl_getRowIndexImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->rowIndex();
 }
 
-JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLTableRowElementImpl_getSectionRowIndexImpl(JNIEnv* env, jclass, jlong peer)
+JNIEXPORT jint JNICALL Java_com_sun_webkit_dom_HTMLTableRowElementImpl_getSectionRowIndexImpl(JNIEnv*, jclass, jlong peer)
 {
     WebCore::JSMainThreadNullState state;
     return IMPL->sectionRowIndex();
