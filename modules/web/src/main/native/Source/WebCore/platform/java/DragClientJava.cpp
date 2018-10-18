@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,13 @@
 #include "config.h"
 
 #include "DragClientJava.h"
+#include "WebPage.h"
+
+#include <WebCore/MainFrame.h>
+#include <WebCore/Page.h>
 #include "DataTransfer.h"
 #include "NotImplemented.h"
+
 
 #include <wtf/Vector.h>
 #include <wtf/text/WTFString.h>
@@ -94,21 +99,21 @@ void DragClientJava::startDrag(DragItem item, DataTransfer& dataTransfer, Frame&
     static JGClass clsString(env->FindClass("java/lang/String"));
     static JGClass clsObject(env->FindClass("java/lang/Object"));
 
-    Vector<String> mimeTypes(dataTransfer.typesPrivate());
+    // we are temporary changing dataTransfer security context
+    // for transfer-to-Java purposes.
+    auto actualStoreMode = dataTransfer.storeMode();
+    dataTransfer.setStoreMode(DataTransfer::StoreMode::Readonly);
+
+    Vector<String> mimeTypes(dataTransfer.types());
     JLObjectArray jmimeTypes(env->NewObjectArray(mimeTypes.size(), clsString, NULL));
     JLObjectArray jvalues(env->NewObjectArray(mimeTypes.size(), clsObject, NULL));
     CheckAndClearException(env); // OOME
 
-    {
-        // we are temporary changing dataTransfer security context
-        // for transfer-to-Java purposes.
-
-        DataTransferAccessPolicy actualJSPolicy = dataTransfer.policy();
-        dataTransfer.setAccessPolicy(DataTransferAccessPolicy::Readable);
-
+    auto document = WebPage::pageFromJObject(m_webPage)->mainFrame().document();
+    if (document) {
         int index = 0;
         for(const auto& mime : mimeTypes) {
-            String value = dataTransfer.getData(mime);
+            String value = dataTransfer.getData(*document, mime);
 
             env->SetObjectArrayElement(
                 jmimeTypes,
@@ -121,9 +126,9 @@ void DragClientJava::startDrag(DragItem item, DataTransfer& dataTransfer, Frame&
                 (jstring)value.toJavaString(env));
             index++;
         }
-
-        dataTransfer.setAccessPolicy(actualJSPolicy);
     }
+    // restore the original store mode
+    dataTransfer.setStoreMode(actualStoreMode);
 
     // Attention! [jimage] can be the instance of WCImage or WCImageFrame class.
     // The nature of raster is too different to make a conversion inside the native code.

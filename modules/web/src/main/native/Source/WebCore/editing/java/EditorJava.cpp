@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 #include "config.h"
 
@@ -8,13 +8,16 @@
 #include "DataObjectJava.h"
 #include "DocumentFragment.h"
 #include "Frame.h"
+#include "HTMLEmbedElement.h"
 #include "HTMLImageElement.h"
 #include "HTMLInputElement.h"
+#include "HTMLObjectElement.h"
 #include "HTMLNames.h"
 #include "HTMLParserIdioms.h"
 #include "Pasteboard.h"
 #include "RenderImage.h"
 #include "SVGElement.h"
+#include "SVGImageElement.h"
 #include "XLinkNames.h"
 #include "markup.h"
 
@@ -37,6 +40,16 @@ RefPtr<DocumentFragment> Editor::webContentFromPasteboard(Pasteboard&, Range&, b
 {
     notImplemented();
     return RefPtr<DocumentFragment>();
+}
+
+void Editor::writeImageToPasteboard(Pasteboard& pasteboard, Element& element, const URL& url, const String& title)
+{
+    pasteboard.writeImage(element, url, title);
+}
+
+void Editor::writeSelectionToPasteboard(Pasteboard& pasteboard)
+{
+    pasteboard.writeSelection(*selectedRange(), canSmartCopyOrDelete(), m_frame, DefaultSelectedTextType);
 }
 
 } // namespace WebCore
