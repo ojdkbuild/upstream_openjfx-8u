@@ -171,7 +171,7 @@ public class MiscellaneousTest extends TestBase {
         }
     }
 
-    @Test(timeout = 30000) public void testDOMTimer() {
+    /*@Test(timeout = 30000)*/ public void testDOMTimer() {
         final TimerCallback timer = new TimerCallback();
         final WebEngine webEngine = createWebEngine();
         submit(() -> {
