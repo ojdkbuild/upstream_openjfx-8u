@@ -67,7 +67,7 @@ setupTools("windows_tools",
     },
     { properties ->
         defineProperty("WINDOWS_VS_VSINSTALLDIR", properties, System.getenv("VSINSTALLDIR"));
-        defineProperty("WINDOWS_VS_WINSDKDLLINSTALLDIR", properties, System.getenv("WindowsSdkDir") + "/Redist/ucrt/DLLs");
+        defineProperty("WINDOWS_VS_WINSDKDLLINSTALLDIR", properties, System.getenv("WindowsSdkDir") + "/Redist/" + System.getenv("WindowsSDKLibVersion") + "/ucrt/DLLs");
         defineProperty("WINDOWS_SDK_DIR", properties, System.getenv("WindowsSdkDir"))
         defineProperty("WINDOWS_SDK_VERSION", properties, System.getenv("WindowsSDKVersion"))
         defineProperty("WINDOWS_VS_VCINSTALLDIR", properties, System.getenv("VCINSTALLDIR"))
@@ -128,7 +128,7 @@ ext.WINDOWS_NATIVE_COMPILE_ENVIRONMENT = [
         "LIBPATH"              : WINDOWS_VS_LIBPATH,
         "DXSDK_DIR"            : WINDOWS_DXSDK_DIR
 ];
-def msvcVer = System.getenv("MSVC_VER") ?: "14.12.25827"
+def msvcVer = System.getenv("MSVC_VER") ?: "14.16.27023"
 def msvcBinDir = ""
 if (winVsVer == 141) {
     msvcBinDir = (IS_64
@@ -170,7 +170,7 @@ ext.MC = cygpath("$winSdkBinDir/mt.exe")
 if (!file(RC).exists()) throw new GradleException("FAIL: cannot find RC: " + RC)
 if (!file(FXC).exists()) throw new GradleException("FAIL: cannot find FXC: " + FXC)
 
-def msvcRedistVer = System.getenv("MSVC_REDIST_VER") ?: "14.12.25810"
+def msvcRedistVer = System.getenv("MSVC_REDIST_VER") ?: "14.16.27012"
 String msvcRedstDir = (IS_64
                   ? "$WINDOWS_VS_VSINSTALLDIR/VC/Redist/MSVC/$msvcRedistVer/x64"
                   : "$WINDOWS_VS_VSINSTALLDIR/VC/Redist/MSVC/$msvcRedistVer/x86")
