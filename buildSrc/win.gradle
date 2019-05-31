@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,31 +39,37 @@ WIN.library = { name -> return "${name}.dll" as String }
 
 WIN.libDest = "bin"
 
+def CPU_BITS = IS_64 ? "x64" : "x86"
+
 setupTools("windows_tools",
     { propFile ->
-        // Create the properties file
-        /*
-        ByteArrayOutputStream results = new ByteArrayOutputStream();
-        String winsdkDir = System.getenv().get("WINSDK_DIR");
-        exec({
-            environment([
-                    "WINSDKPATH" : winsdkDir == null ? "" : winsdkDir,
-                    "CONF"       : "/$CONF", // TODO does this mean the generated properties must be reset when in a different configuration?
-                    "VCARCH"     : IS_64 ? "amd64" : "x86",
-                    "SDKARCH"    : IS_64 ? "/x64" : "/x86",
-            ]);
-            commandLine("cmd", "/q", "/c", "buildSrc\\genVSproperties.bat");
-            setStandardOutput(results);
-        });
-        BufferedReader reader = new BufferedReader(new StringReader(results.toString().trim()));
-        reader.readLine();
-        reader.readLine();
-        String line;
-        while ((line = reader.readLine()) != null && !line.startsWith("######")) {
-            line = line.replace("\\", "/").replace("/@@ENDOFLINE@@", "").replace("@@ENDOFLINE@@", "").replace("//", "/").replace("windows.vs.", "WINDOWS_VS_");
-            propFile << line << "\r\n";
+        if (project.hasProperty('setupWinTools')) {
+            setupWinTools(propFile)
+        } else {
+            // Create the properties file
+            /*
+            ByteArrayOutputStream results = new ByteArrayOutputStream();
+            String winsdkDir = System.getenv().get("WINSDK_DIR");
+            exec({
+                environment([
+                        "WINSDKPATH" : winsdkDir == null ? "" : winsdkDir,
+                        "CONF"       : "/$CONF", // TODO does this mean the generated properties must be reset when in a different configuration?
+                        "VCARCH"     : IS_64 ? "amd64" : "x86",
+                        "SDKARCH"    : IS_64 ? "/x64" : "/x86",
+                ]);
+                commandLine("cmd", "/q", "/c", "buildSrc\\genVSproperties.bat");
+                setStandardOutput(results);
+            });
+            BufferedReader reader = new BufferedReader(new StringReader(results.toString().trim()));
+            reader.readLine();
+            reader.readLine();
+            String line;
+            while ((line = reader.readLine()) != null && !line.startsWith("######")) {
+                line = line.replace("\\", "/").replace("/@@ENDOFLINE@@", "").replace("@@ENDOFLINE@@", "").replace("//", "/").replace("windows.vs.", "WINDOWS_VS_");
+                propFile << line << "\r\n";
+            }
+            */
         }
-        */
     },
     { properties ->
         defineProperty("WINDOWS_VS_VSINSTALLDIR", properties, System.getenv("VSINSTALLDIR"));
@@ -143,16 +149,15 @@ def compiler = IS_COMPILE_PARFAIT ? "cl.exe" : cygpath("$msvcBinDir/cl.exe")
 def linker = IS_COMPILE_PARFAIT ? "link.exe" : cygpath("$msvcBinDir/link.exe")
 def winSdkBinDir = "$WINDOWS_SDK_DIR/Bin"
 if (WINDOWS_VS_VER != "100") {
-    winSdkBinDir += "/" + (IS_64 ? "x64" : "x86")
+    winSdkBinDir += "/$CPU_BITS"
 }
 
 if (!file(cygpath("$winSdkBinDir/RC.Exe")).exists()) {
     winSdkBinDir = "$WINDOWS_SDK_DIR/Bin/$WINDOWS_SDK_VERSION"
     if (WINDOWS_VS_VER != "100") {
-        winSdkBinDir += "/" + (IS_64 ? "x64" : "x86")
+        winSdkBinDir += "/$CPU_BITS"
     }
 }
-println "winSdkBinDir=$winSdkBinDir"
 
 ext.RC = cygpath("$winSdkBinDir/rc.exe")
 def rcCompiler = RC
@@ -175,9 +180,7 @@ String msvcRedstDir = (IS_64
                   ? "$WINDOWS_VS_VSINSTALLDIR/VC/Redist/MSVC/$msvcRedistVer/x64"
                   : "$WINDOWS_VS_VSINSTALLDIR/VC/Redist/MSVC/$msvcRedistVer/x86")
 
-String winSdkDllDir = (IS_64
-                  ? "$WINDOWS_VS_WINSDKDLLINSTALLDIR/x64"
-                  : "$WINDOWS_VS_WINSDKDLLINSTALLDIR/x86")
+def winSdkDllDir = "$WINDOWS_VS_WINSDKDLLINSTALLDIR/$CPU_BITS"
 
 def WINDOWS_DLL_VER = WINDOWS_VS_VER
 ext.MSVCR = null
@@ -485,6 +488,8 @@ WIN.media.fxpluginsRcFlags = ["/d", "JFX_FNAME=fxplugins.dll", "/d", "JFX_INTERN
 WIN.media.jfxmediaRcFlags = ["/d", "JFX_FNAME=jfxmedia.dll", "/d", "JFX_INTERNAL_NAME=jfxmedia", rcFlags].flatten()
 
 WIN.webkit = [:]
+WIN.webkit.compiler = compiler
+WIN.webkit.linker = linker
 WIN.webkit.rcCompiler = rcCompiler
 WIN.webkit.rcSource = defaultRcSource
 WIN.webkit.rcFlags = ["/d", "JFX_FNAME=jfxwebkit.dll", "/d", "JFX_INTERNAL_NAME=webkit", rcFlags].flatten();
