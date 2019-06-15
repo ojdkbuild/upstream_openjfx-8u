@@ -64,8 +64,9 @@ static gboolean call_runnable (gpointer data)
 
 extern "C" {
 
-
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
+#endif  // __GNUC__
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 static void init_threads() {
     gboolean is_g_thread_get_initialized = FALSE;
@@ -79,7 +80,9 @@ static void init_threads() {
     }
     gdk_threads_init();
 }
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic pop
+#endif  // __GNUC__
 
 jboolean gtk_verbose = JNI_FALSE;
 
