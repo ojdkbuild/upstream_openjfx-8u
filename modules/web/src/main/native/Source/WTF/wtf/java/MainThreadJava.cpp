@@ -6,7 +6,6 @@
 #include <wtf/java/JavaEnv.h>
 #include <wtf/java/JavaRef.h>
 #include <wtf/MainThread.h>
-#include <wtf/RunLoop.h>
 
 namespace WTF {
 void scheduleDispatchFunctionsOnMainThread()
@@ -28,9 +27,6 @@ void scheduleDispatchFunctionsOnMainThread()
 
 void initializeMainThreadPlatform()
 {
-#if OS(WINDOWS)
-    RunLoop::registerRunLoopMessageWindowClass();
-#endif
 }
 
 bool isMainThreadIfInitialized()
