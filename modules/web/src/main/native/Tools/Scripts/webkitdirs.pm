@@ -2231,7 +2231,7 @@ sub cmakeGeneratedBuildfile(@)
     if ($willUseNinja) {
         return File::Spec->catfile(baseProductDir(), configuration(), "build.ninja")
     } elsif (isAnyWindows()) {
-        return File::Spec->catfile(baseProductDir(), configuration(), "Makefile")
+        return File::Spec->catfile(baseProductDir(), configuration(), "WebKit.sln")
     } else {
         return File::Spec->catfile(baseProductDir(), configuration(), "Makefile")
     }
@@ -2278,13 +2278,12 @@ sub generateBuildSystemFromCMakeProject
         push @args, "-DUSE_THIN_ARCHIVES=OFF" if isPlayStation();
     } elsif (isJava() && isAnyWindows()) {
         push @args, "-G";
-        push @args, "\"NMake Makefiles\"";
-        #if (isWin64()) {
-        #    push @args, '"Visual Studio 15 2017 Win64"';
-        #    push @args, '-DCMAKE_GENERATOR_TOOLSET="host=x64"';
-        #} else {
-        #    push @args, '"Visual Studio 15 2017"';
-        #}
+        if (isWin64()) {
+            push @args, '"Visual Studio 15 2017 Win64"';
+            push @args, '-DCMAKE_GENERATOR_TOOLSET="host=x64"';
+        } else {
+            push @args, '"Visual Studio 15 2017"';
+        }
     } elsif (isAnyWindows() && isWin64()) {
         push @args, '-G "Visual Studio 15 2017 Win64"';
         push @args, '-DCMAKE_GENERATOR_TOOLSET="host=x64"';
