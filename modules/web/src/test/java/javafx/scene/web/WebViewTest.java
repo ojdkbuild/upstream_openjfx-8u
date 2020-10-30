@@ -26,6 +26,7 @@
 package javafx.scene.web;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 import java.util.concurrent.FutureTask;
