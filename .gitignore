@@ -9,3 +9,5 @@
 /run-gradle.bat
 *.pyc
 /modules/web/src/main/native/Source/ThirdParty/icu/source/data/in/icudt51l.dat
+/modules/web/foo/
+/modules/web/bar/
