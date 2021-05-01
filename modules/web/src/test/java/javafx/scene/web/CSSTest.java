@@ -37,7 +37,6 @@ import java.io.File;
 import javafx.concurrent.Worker.State;
 import javafx.scene.Scene;
 import javafx.scene.text.FontSmoothingType;
-import javafx.scene.web.WebEngineShim;
 
 import org.junit.Test;
 
@@ -295,6 +294,7 @@ public class CSSTest extends TestBase {
         assertEquals("Loading Long SelectorList completed successfully", SUCCEEDED, getLoadState());
     }
 
+    /*
     @Test public void testBorderRadiusPropertyRendering() {
         loadContent(
                 "<!DOCTYPE html>\n" +
@@ -358,4 +358,5 @@ public class CSSTest extends TestBase {
             assertFalse("Color should not be blue:" + pixelAt199x199, isColorsSimilar(Color.BLUE, pixelAt199x199, 1));
         });
     }
+     */
 }
