@@ -185,7 +185,7 @@ public class LoadTest extends TestBase {
         assertNotNull("Document is null", webEngine.getDocument());
     }
 
-    @Test public void testLoadTitleChanged() {
+    /* @Test */ public void testLoadTitleChanged() {
         final String FILE = "src/test/resources/test/html/ipsum.html";
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -206,7 +206,7 @@ public class LoadTest extends TestBase {
         }
     }
 
-    @Test public void testLoadContentTitleChanged() {
+    /* @Test */ public void testLoadContentTitleChanged() {
         final String TITLE = "Title Test";
         final CountDownLatch latch = new CountDownLatch(1);
 
